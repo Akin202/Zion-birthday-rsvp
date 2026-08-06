@@ -1,0 +1,158 @@
+@import "tailwindcss";
+
+@theme {
+  --color-hero-red: #E23636;
+  --color-hero-blue: #1B4C9B;
+  --color-ink: #111111;
+  --color-newsprint: #FDF6E3;
+  --color-pop-pink: #FF4081;
+  --color-pop-cyan: #00AEEF;
+  --color-pop-yellow: #FFD700;
+
+  --font-display: "Bangers", cursive;
+  --font-body: "Nunito", sans-serif;
+
+  --shadow-comic: 4px 4px 0px #111111;
+  --shadow-comic-lg: 8px 8px 0px #111111;
+
+  --border-width-3: 3px;
+}
+
+/* Custom font utility classes */
+.font-display {
+  font-family: 'Bangers', cursive, sans-serif;
+  letter-spacing: 0.05em;
+}
+
+.font-body {
+  font-family: 'Nunito', sans-serif;
+}
+
+/* Custom Comic Box Shadows */
+.shadow-comic {
+  box-shadow: 4px 4px 0px #111111;
+}
+
+.shadow-comic-lg {
+  box-shadow: 8px 8px 0px #111111;
+}
+
+.shadow-comic-sm {
+  box-shadow: 2px 2px 0px #111111;
+}
+
+/* Halftone dot pattern background */
+.bg-halftone-pattern {
+  background-image: radial-gradient(#111111 15%, transparent 16%), radial-gradient(#111111 15%, transparent 16%);
+  background-size: 16px 16px;
+  background-position: 0 0, 8px 8px;
+}
+
+.bg-halftone-dots {
+  background-image: radial-gradient(rgba(17, 17, 17, 0.25) 18%, transparent 19%);
+  background-size: 12px 12px;
+}
+
+.bg-halftone-blue {
+  background-image: radial-gradient(rgba(27, 76, 155, 0.25) 18%, transparent 19%);
+  background-size: 14px 14px;
+}
+
+.bg-halftone-red {
+  background-image: radial-gradient(rgba(226, 54, 54, 0.25) 18%, transparent 19%);
+  background-size: 14px 14px;
+}
+
+.bg-halftone-white {
+  background-image: radial-gradient(rgba(255, 255, 255, 0.3) 18%, transparent 19%);
+  background-size: 12px 12px;
+}
+
+/* Comic print misregistration effect for headings */
+.text-shadow-comic {
+  text-shadow: 3px 3px 0px #E23636, -2px -2px 0px #00AEEF;
+}
+
+.text-shadow-hero {
+  text-shadow: 4px 4px 0px #111111, -3px -3px 0px #E23636;
+}
+
+/* Smooth scrolling for anchor links */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Speech bubble tails */
+.speech-tail-bottom-left::after {
+  content: '';
+  position: absolute;
+  bottom: -16px;
+  left: 24px;
+  width: 0;
+  height: 0;
+  border-left: 12px solid transparent;
+  border-right: 12px solid transparent;
+  border-top: 16px solid #111111;
+}
+.speech-tail-bottom-left::before {
+  content: '';
+  position: absolute;
+  bottom: -12px;
+  left: 26px;
+  width: 0;
+  height: 0;
+  border-left: 10px solid transparent;
+  border-right: 10px solid transparent;
+  border-top: 14px solid #FDF6E3;
+  z-index: 1;
+}
+
+.speech-tail-bottom-right::after {
+  content: '';
+  position: absolute;
+  bottom: -16px;
+  right: 24px;
+  width: 0;
+  height: 0;
+  border-left: 12px solid transparent;
+  border-right: 12px solid transparent;
+  border-top: 16px solid #111111;
+}
+.speech-tail-bottom-right::before {
+  content: '';
+  position: absolute;
+  bottom: -12px;
+  right: 26px;
+  width: 0;
+  height: 0;
+  border-left: 10px solid transparent;
+  border-right: 10px solid transparent;
+  border-top: 14px solid #FDF6E3;
+  z-index: 1;
+}
+
+.speech-tail-bottom-center::after {
+  content: '';
+  position: absolute;
+  bottom: -16px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 12px solid transparent;
+  border-right: 12px solid transparent;
+  border-top: 16px solid #111111;
+}
+.speech-tail-bottom-center::before {
+  content: '';
+  position: absolute;
+  bottom: -12px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 10px solid transparent;
+  border-right: 10px solid transparent;
+  border-top: 14px solid #FDF6E3;
+  z-index: 1;
+}
