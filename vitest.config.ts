@@ -18,7 +18,7 @@ export default defineConfig({
       provider: 'v8',
       reporter: ['text', 'html'],
       include: ['lib/**/*.ts', 'types/**/*.ts', 'components/**/*.tsx'],
-      exclude: ['lib/mock-data.ts', 'lib/router.tsx'],
+      exclude: ['lib/router.tsx', 'lib/supabase.ts'],
     },
   },
 });

@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { LazyMotion, domAnimation, m, AnimatePresence } from "motion/react";
 import { eventConfig } from "../../config/event.config";
-import { RsvpFormValues, RsvpRecord, SubmissionState, calculateHeadcount } from "../../types/rsvp";
+import { RsvpFormValues, RsvpRecord, SubmissionState } from "../../types/rsvp";
 import { RsvpForm } from "./RsvpForm";
 import { SpeechBubble } from "../ui/SpeechBubble";
 import { ComicPanel } from "../ui/ComicPanel";
@@ -9,6 +9,7 @@ import { ComicButton } from "../ui/ComicButton";
 import { BurstBadge } from "../ui/BurstBadge";
 import { ConfettiBurst } from "../ui/ConfettiBurst";
 import { generateGoogleCalendarUrl, generateWhatsAppShareUrl } from "../../lib/calendar";
+import { submitRsvp } from "../../lib/rsvp-submit";
 import { useReducedMotion } from "../../hooks/useReducedMotion";
 import {
   Calendar,
@@ -40,6 +41,9 @@ export const RsvpSection: React.FC = () => {
   // 3. Dev State Switcher Override (Visible in dev/preview for instant testing)
   const [devStateOverride, setDevStateOverride] = useState<string | null>(null);
 
+  // 4. Edit token returned by the server, used for the "Update my RSVP" link.
+  const [editToken, setEditToken] = useState<string | null>(null);
+
   // Check deadline
   const isDeadlinePassed = Date.now() > new Date(eventConfig.event.rsvpDeadline).getTime();
   const effectiveDeadlineState = devStateOverride === "deadline" || (isDeadlinePassed && !devStateOverride);
@@ -64,27 +68,19 @@ export const RsvpSection: React.FC = () => {
   };
 
   // Handle Form Submit
-  const handleFormSubmit = (values: RsvpFormValues) => {
-    // TODO(claude-code): replace with real server action call in Phase 3
+  const handleFormSubmit = async (values: RsvpFormValues) => {
+    // Guard against a double-fire racing two inserts for the same guest.
+    if (submissionState.status === "submitting") return;
+
     setSubmissionState({ status: "submitting" });
 
-    setTimeout(() => {
-      const mockRecord: RsvpRecord = {
-        id: `rsvp-${Date.now()}`,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        totalHeadcount: calculateHeadcount(values),
-        checkedIn: false,
-        checkedInAt: null,
-        actualHeadcount: null,
-        ...values,
-      };
+    const outcome = await submitRsvp(values);
 
-      setSubmissionState({
-        status: "success",
-        record: mockRecord,
-      });
-    }, 900);
+    // Held in memory only, for the "Update my RSVP" link on the success panel.
+    // The durable copy reaches the guest by email.
+    if (outcome.editToken) setEditToken(outcome.editToken);
+
+    setSubmissionState(outcome.state);
   };
 
   const firstName = enteredName ? enteredName.split(" ")[0] : "Hero";

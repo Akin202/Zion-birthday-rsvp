@@ -64,4 +64,8 @@ test('guest bundle does not pull in the admin chunk', async ({ page }) => {
   await page.waitForLoadState('networkidle');
 
   expect(scripts.some((s) => s.includes('OverviewDashboard'))).toBe(false);
+  // data-access carries the full supabase-js client (~58 KB gzipped). The guest
+  // path talks to the Edge Function with plain fetch via lib/supabase-config,
+  // so this chunk must never reach the invite page.
+  expect(scripts.some((s) => s.includes('data-access'))).toBe(false);
 });

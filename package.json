@@ -12,7 +12,13 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "db:start": "supabase start",
+    "db:stop": "supabase stop",
+    "db:reset": "supabase db reset",
+    "db:push": "supabase db push",
+    "verify:rls": "NODE_OPTIONS=--experimental-websocket tsx scripts/verify-rls.ts",
+    "verify:db": "NODE_OPTIONS=--experimental-websocket tsx scripts/verify-rsvp-functions.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.7.1",
@@ -38,7 +44,9 @@
     "@vitejs/plugin-react": "^5.0.4",
     "@vitest/coverage-v8": "^4.1.10",
     "jsdom": "^28.0.0",
+    "supabase": "^2.111.0",
     "tailwindcss": "^4.1.14",
+    "tsx": "^4.23.9",
     "typescript": "~5.8.2",
     "vite": "^6.2.3",
     "vitest": "^4.1.10"

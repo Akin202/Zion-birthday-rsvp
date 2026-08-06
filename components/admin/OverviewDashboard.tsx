@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { getRsvpStats } from "../../lib/data-access";
 import { RsvpStats } from "../../types/rsvp";
 import { eventConfig } from "../../config/event.config";
+import { AdminError } from "./AdminError";
 import {
   Users,
   UserCheck,
@@ -36,24 +37,42 @@ const GENDER_COLORS = {
 export const OverviewDashboard: React.FC = () => {
   const [stats, setStats] = useState<RsvpStats | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
     // TODO(claude-code): subscribe to Supabase realtime so these figures live-update
     let isMounted = true;
-    getRsvpStats().then((data) => {
-      if (isMounted) {
+    setLoading(true);
+    setError(null);
+
+    getRsvpStats()
+      .then((data) => {
+        if (!isMounted) return;
         setStats(data);
         setLoading(false);
-      }
-    });
+      })
+      .catch((err: unknown) => {
+        if (!isMounted) return;
+        console.error("[admin] failed to load stats:", err);
+        setError(
+          err instanceof Error ? err.message : "Could not load the event statistics.",
+        );
+        setLoading(false);
+      });
+
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [reloadKey]);
 
   const handlePrintMessages = () => {
     window.print();
   };
+
+  if (error) {
+    return <AdminError message={error} onRetry={() => setReloadKey((k) => k + 1)} />;
+  }
 
   if (loading || !stats) {
     return (
@@ -201,7 +220,7 @@ export const OverviewDashboard: React.FC = () => {
                 <XAxis dataKey="age" tick={{ fontSize: 11 }} />
                 <YAxis allowDecimals={false} tick={{ fontSize: 11 }} />
                 <Tooltip
-                  formatter={(val: number) => [`${val} children`, "Count"]}
+                  formatter={(val) => [`${Number(val ?? 0)} children`, "Count"]}
                   labelFormatter={(age) => `Age ${age}`}
                   contentStyle={{ borderRadius: "8px", fontSize: "12px" }}
                 />
@@ -238,7 +257,7 @@ export const OverviewDashboard: React.FC = () => {
                     ))}
                   </Pie>
                   <Tooltip
-                    formatter={(val: number) => [`${val} children`, "Total"]}
+                    formatter={(val) => [`${Number(val ?? 0)} children`, "Total"]}
                     contentStyle={{ borderRadius: "8px", fontSize: "12px" }}
                   />
                   <Legend verticalAlign="bottom" height={36} />

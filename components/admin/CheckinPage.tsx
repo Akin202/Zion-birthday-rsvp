@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { searchRsvpsByName, setCheckedIn, getAllRsvps } from "../../lib/data-access";
 import { RsvpRecord } from "../../types/rsvp";
 import { Search, CheckCircle2, AlertTriangle, Wifi, Minus, Plus, RotateCcw } from "lucide-react";
+import { AdminError } from "./AdminError";
 
 export const CheckinPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -9,6 +10,14 @@ export const CheckinPage: React.FC = () => {
   const [results, setResults] = useState<RsvpRecord[]>([]);
   const [loading, setLoading] = useState(false);
   const [flashSuccessId, setFlashSuccessId] = useState<string | null>(null);
+
+  // Two separate failure surfaces on purpose. A search that failed shows an empty
+  // list, which reads as "not on the guest list" — staff would turn someone away
+  // over a network error. A check-in that failed to write is worse still: the row
+  // must not look checked in when it isn't.
+  const [searchError, setSearchError] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [retryKey, setRetryKey] = useState(0);
 
   // Headcount Stepper modal state
   const [stepperRecord, setStepperRecord] = useState<RsvpRecord | null>(null);
@@ -35,46 +44,72 @@ export const CheckinPage: React.FC = () => {
   useEffect(() => {
     let isMounted = true;
     setLoading(true);
-    searchRsvpsByName(debouncedQuery).then((data) => {
-      if (isMounted) {
+    setSearchError(null);
+
+    searchRsvpsByName(debouncedQuery)
+      .then((data) => {
+        if (!isMounted) return;
         setResults(data);
         setLoading(false);
-      }
-    });
+      })
+      .catch((err: unknown) => {
+        if (!isMounted) return;
+        console.error("[checkin] search failed:", err);
+        // Clear the stale list rather than leave last-good results on screen —
+        // showing a guest we can no longer verify is worse than showing nothing.
+        setResults([]);
+        setSearchError(
+          err instanceof Error ? err.message : "Could not reach the guest list.",
+        );
+        setLoading(false);
+      });
+
     return () => {
       isMounted = false;
     };
-  }, [debouncedQuery]);
+  }, [debouncedQuery, retryKey]);
 
   const handleCheckInToggle = async (record: RsvpRecord) => {
-    if (record.checkedIn) {
-      // Undo Check-in
-      await setCheckedIn(record.id, false);
-      const updated = await searchRsvpsByName(debouncedQuery);
-      setResults(updated);
-    } else {
-      // Check in
-      await setCheckedIn(record.id, true, record.totalHeadcount);
+    setActionError(null);
 
-      // Flash green confirmation
-      setFlashSuccessId(record.id);
-      setTimeout(() => setFlashSuccessId(null), 1500);
+    try {
+      if (record.checkedIn) {
+        await setCheckedIn(record.id, false);
+      } else {
+        // Confirm the write landed before showing any success affordance.
+        await setCheckedIn(record.id, true, record.totalHeadcount);
 
-      // Open Headcount verification prompt
-      setStepperRecord(record);
-      setStepperCount(record.totalHeadcount);
+        setFlashSuccessId(record.id);
+        setTimeout(() => setFlashSuccessId(null), 1500);
 
-      const updated = await searchRsvpsByName(debouncedQuery);
-      setResults(updated);
+        setStepperRecord(record);
+        setStepperCount(record.totalHeadcount);
+      }
+
+      setResults(await searchRsvpsByName(debouncedQuery));
+    } catch (err: unknown) {
+      console.error("[checkin] check-in write failed:", err);
+      setActionError(
+        `Could not save the check-in for ${record.guestFullName}. They are NOT checked in — try again.`,
+      );
     }
   };
 
   const handleSaveActualCount = async () => {
     if (!stepperRecord) return;
-    await setCheckedIn(stepperRecord.id, true, stepperCount);
-    const updated = await searchRsvpsByName(debouncedQuery);
-    setResults(updated);
-    setStepperRecord(null);
+    setActionError(null);
+
+    try {
+      await setCheckedIn(stepperRecord.id, true, stepperCount);
+      setResults(await searchRsvpsByName(debouncedQuery));
+      setStepperRecord(null);
+    } catch (err: unknown) {
+      console.error("[checkin] headcount save failed:", err);
+      // Leave the stepper open so the count isn't lost and can be retried.
+      setActionError(
+        `Could not save the headcount for ${stepperRecord.guestFullName}. Try again.`,
+      );
+    }
   };
 
   return (
@@ -109,11 +144,20 @@ export const CheckinPage: React.FC = () => {
         </div>
       </div>
 
+      {actionError && <AdminError variant="banner" message={actionError} />}
+
       {/* RESULTS FEED */}
       {loading ? (
         <div className="p-8 text-center text-slate-600 font-bold text-base">
           Searching guest list...
         </div>
+      ) : searchError ? (
+        /* Must outrank the "NO RSVP FOUND" card below — a failed lookup is not
+           evidence the guest is uninvited. */
+        <AdminError
+          message={`${searchError} This is a connection problem, not proof the guest is missing — do not turn anyone away on this screen.`}
+          onRetry={() => setRetryKey((k) => k + 1)}
+        />
       ) : results.length === 0 ? (
         /* NO RESULTS PROMINENT RED CARD */
         <div className="bg-red-600 text-white border-4 border-red-800 p-8 rounded-2xl text-center space-y-3 shadow-lg">

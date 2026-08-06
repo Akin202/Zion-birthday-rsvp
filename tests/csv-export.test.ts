@@ -3,7 +3,10 @@ import { escapeCsvCell, generateChildrenCsv, generateRsvpCsv } from '../lib/csv-
 import { calculateHeadcount, type RsvpRecord } from '../types/rsvp';
 
 function record(overrides: Partial<RsvpRecord> = {}): RsvpRecord {
-  const values = {
+  const defaults: RsvpRecord = {
+    id: 'rsvp-001',
+    createdAt: '2026-08-01T10:00:00.000Z',
+    updatedAt: '2026-08-01T10:00:00.000Z',
     guestFullName: 'Akinola Adebayo',
     email: 'akin@example.com',
     phone: '+2348012345678',
@@ -15,19 +18,19 @@ function record(overrides: Partial<RsvpRecord> = {}): RsvpRecord {
     nannyCount: 0,
     dietaryNotes: '',
     messageToCelebrant: '',
-    ...overrides,
-  } as RsvpRecord;
-
-  return {
-    id: 'rsvp-001',
-    createdAt: '2026-08-01T10:00:00.000Z',
-    updatedAt: '2026-08-01T10:00:00.000Z',
-    totalHeadcount: calculateHeadcount(values),
+    totalHeadcount: 0,
     checkedIn: false,
     checkedInAt: null,
     actualHeadcount: null,
-    ...values,
-    ...overrides,
+  };
+
+  const merged = { ...defaults, ...overrides };
+
+  // Derive the headcount from the merged result unless a test pins it, so
+  // fixtures cannot drift from calculateHeadcount().
+  return {
+    ...merged,
+    totalHeadcount: overrides.totalHeadcount ?? calculateHeadcount(merged),
   };
 }
 
