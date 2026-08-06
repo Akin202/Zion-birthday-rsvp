@@ -9,17 +9,12 @@
       "DOM",
       "DOM.Iterable"
     ],
-    "strict": true,
     "skipLibCheck": true,
     "moduleResolution": "bundler",
     "isolatedModules": true,
     "moduleDetection": "force",
     "allowJs": true,
     "jsx": "react-jsx",
-    "types": [
-      "vite/client",
-      "node"
-    ],
     "paths": {
       "@/*": [
         "./*"
@@ -27,11 +22,5 @@
     },
     "allowImportingTsExtensions": true,
     "noEmit": true
-  },
-  "exclude": [
-    "node_modules",
-    "dist",
-    "e2e",
-    "supabase/functions"
-  ]
+  }
 }

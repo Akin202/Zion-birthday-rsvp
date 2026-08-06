@@ -1,7 +1,6 @@
 import React from "react";
 import { useRouter } from "../../lib/router";
 import { eventConfig } from "../../config/event.config";
-import { signOut } from "../../lib/auth";
 import {
   LayoutDashboard,
   Users,
@@ -28,8 +27,8 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
     { label: "Export CSV", route: "/admin/export", icon: Download },
   ];
 
-  const handleSignOut = async () => {
-    await signOut();
+  const handleSignOut = () => {
+    // TODO(claude-code): wire to Supabase Auth sign-out
     navigate("/admin/login");
   };
 

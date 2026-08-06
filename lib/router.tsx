@@ -1,33 +1,41 @@
-import { useEffect } from "react";
-import { useLocation, useNavigate, type NavigateFunction } from "react-router-dom";
+import React, { createContext, useContext, useState, useEffect } from "react";
 
-/**
- * Thin adapter over react-router so existing callers keep the `{ path, navigate }`
- * shape they were written against. Prefer react-router's own hooks in new code.
- */
-export interface RouterApi {
+interface RouterContextType {
   path: string;
-  navigate: NavigateFunction;
+  navigate: (to: string) => void;
 }
 
-export function useRouter(): RouterApi {
-  const location = useLocation();
-  const navigate = useNavigate();
+const RouterContext = createContext<RouterContextType>({
+  path: typeof window !== "undefined" ? window.location.pathname : "/",
+  navigate: () => {},
+});
 
-  return { path: location.pathname, navigate };
-}
-
-/**
- * react-router preserves scroll position across navigations. The previous
- * hand-rolled router reset to top on every push, and the admin screens rely on
- * that (navigating from a scrolled guest list to Check-In must land at the top).
- */
-export function ScrollToTop() {
-  const { pathname } = useLocation();
+export const RouterProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [path, setPath] = useState<string>(
+    typeof window !== "undefined" ? window.location.pathname : "/"
+  );
 
   useEffect(() => {
-    window.scrollTo(0, 0);
-  }, [pathname]);
+    const handlePopState = () => {
+      setPath(window.location.pathname);
+    };
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, []);
 
-  return null;
-}
+  const navigate = (to: string) => {
+    if (typeof window !== "undefined") {
+      window.history.pushState({}, "", to);
+      setPath(to);
+      window.scrollTo(0, 0);
+    }
+  };
+
+  return (
+    <RouterContext.Provider value={{ path, navigate }}>
+      {children}
+    </RouterContext.Provider>
+  );
+};
+
+export const useRouter = () => useContext(RouterContext);

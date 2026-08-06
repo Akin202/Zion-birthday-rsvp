@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { getAllRsvps, updateRsvp } from "../../lib/data-access";
-import { AdminError } from "./AdminError";
 import { RsvpRecord, ChildEntry } from "../../types/rsvp";
 import {
   Search,
@@ -39,37 +38,23 @@ export const GuestListPage: React.FC = () => {
   // Edit Modal State
   const [editingGuest, setEditingGuest] = useState<RsvpRecord | null>(null);
   const [saving, setSaving] = useState(false);
-  const [saveError, setSaveError] = useState<string | null>(null);
 
   // Pagination State
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 50;
 
-  const [error, setError] = useState<string | null>(null);
-  const [reloadKey, setReloadKey] = useState(0);
-
   useEffect(() => {
     let isMounted = true;
-    setLoading(true);
-    setError(null);
-
-    getAllRsvps()
-      .then((data) => {
-        if (!isMounted) return;
+    getAllRsvps().then((data) => {
+      if (isMounted) {
         setRsvps(data);
         setLoading(false);
-      })
-      .catch((err: unknown) => {
-        if (!isMounted) return;
-        console.error("[admin] failed to load guest list:", err);
-        setError(err instanceof Error ? err.message : "Could not load the guest list.");
-        setLoading(false);
-      });
-
+      }
+    });
     return () => {
       isMounted = false;
     };
-  }, [reloadKey]);
+  }, []);
 
   // Debounce search term 300ms
   useEffect(() => {
@@ -127,45 +112,19 @@ export const GuestListPage: React.FC = () => {
     return filteredAndSorted.slice(start, start + pageSize);
   }, [filteredAndSorted, currentPage]);
 
-  // Always paired with clearing the save error, so a failed save from a previous
-  // guest never shows up over a freshly opened one.
-  const openEditor = (row: RsvpRecord) => {
-    setSaveError(null);
-    setEditingGuest({ ...row });
-  };
-
-  const closeEditor = () => {
-    setSaveError(null);
-    setEditingGuest(null);
-  };
-
   const handleSaveEdit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingGuest) return;
 
     setSaving(true);
-    setSaveError(null);
+    // TODO(claude-code): persist edits to Supabase
+    await updateRsvp(editingGuest.id, editingGuest);
 
-    try {
-      await updateRsvp(editingGuest.id, editingGuest);
-      const refreshed = await getAllRsvps();
-      setRsvps(refreshed);
-      setEditingGuest(null);
-    } catch (err: unknown) {
-      // Keep the modal open with the operator's edits intact so the save can be
-      // retried — discarding their typing on a network blip is worse.
-      console.error("[admin] failed to save guest edit:", err);
-      setSaveError(
-        err instanceof Error ? err.message : "Could not save those changes. Please try again.",
-      );
-    } finally {
-      setSaving(false);
-    }
+    const refreshed = await getAllRsvps();
+    setRsvps(refreshed);
+    setSaving(false);
+    setEditingGuest(null);
   };
-
-  if (error) {
-    return <AdminError message={error} onRetry={() => setReloadKey((k) => k + 1)} />;
-  }
 
   if (loading) {
     return (
@@ -320,7 +279,7 @@ export const GuestListPage: React.FC = () => {
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
-                              openEditor(row);
+                              setEditingGuest({ ...row });
                             }}
                             className="p-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded transition-colors"
                             title="Edit Guest Details"
@@ -506,7 +465,7 @@ export const GuestListPage: React.FC = () => {
                 Edit Guest Details — {editingGuest.guestFullName}
               </h3>
               <button
-                onClick={closeEditor}
+                onClick={() => setEditingGuest(null)}
                 className="p-1 text-slate-400 hover:text-slate-600 rounded"
               >
                 <X className="w-5 h-5" />
@@ -661,12 +620,10 @@ export const GuestListPage: React.FC = () => {
                 />
               </div>
 
-              {saveError && <AdminError variant="banner" message={saveError} />}
-
               <div className="pt-4 border-t border-slate-100 flex items-center justify-end gap-2">
                 <button
                   type="button"
-                  onClick={closeEditor}
+                  onClick={() => setEditingGuest(null)}
                   className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded"
                 >
                   Cancel

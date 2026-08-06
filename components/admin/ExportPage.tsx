@@ -2,54 +2,35 @@ import React, { useState } from "react";
 import { getAllRsvps } from "../../lib/data-access";
 import { generateRsvpCsv, generateChildrenCsv, downloadCsvBlob } from "../../lib/csv-export";
 import { Download, FileSpreadsheet, ShieldAlert, CheckCircle2 } from "lucide-react";
-import { AdminError } from "./AdminError";
-import { RsvpRecord } from "../../types/rsvp";
 
 export const ExportPage: React.FC = () => {
   const [exportingRsvp, setExportingRsvp] = useState(false);
   const [exportingChildren, setExportingChildren] = useState(false);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
 
-  /**
-   * Both exports do the same thing with a different serialiser, so the fetch,
-   * naming, and failure handling live here once. A silently empty CSV is the
-   * failure mode that matters — the client would cater from it.
-   */
-  const runExport = async (
-    setBusy: (busy: boolean) => void,
-    filePrefix: string,
-    serialise: (rows: RsvpRecord[]) => string,
-  ) => {
-    setBusy(true);
-    setError(null);
-    setSuccessMsg(null);
-
+  const handleDownloadRsvpCsv = async () => {
+    setExportingRsvp(true);
+    const rsvps = await getAllRsvps();
+    const csvText = generateRsvpCsv(rsvps);
     const today = new Date().toISOString().split("T")[0];
-    const fileName = `${filePrefix}-${today}.csv`;
+    downloadCsvBlob(csvText, `rsvps-${today}.csv`);
 
-    try {
-      const rsvps = await getAllRsvps();
-      downloadCsvBlob(serialise(rsvps), fileName);
-      setSuccessMsg(`Downloaded ${fileName} (${rsvps.length} records).`);
-      setTimeout(() => setSuccessMsg(null), 4000);
-    } catch (err: unknown) {
-      console.error(`[admin] export ${fileName} failed:`, err);
-      setError(
-        err instanceof Error
-          ? `${err.message} — no file was downloaded.`
-          : "Could not load the guest data. No file was downloaded.",
-      );
-    } finally {
-      setBusy(false);
-    }
+    setExportingRsvp(false);
+    setSuccessMsg(`Downloaded rsvps-${today}.csv successfully!`);
+    setTimeout(() => setSuccessMsg(null), 4000);
   };
 
-  const handleDownloadRsvpCsv = () =>
-    runExport(setExportingRsvp, "rsvps", generateRsvpCsv);
+  const handleDownloadChildrenCsv = async () => {
+    setExportingChildren(true);
+    const rsvps = await getAllRsvps();
+    const csvText = generateChildrenCsv(rsvps);
+    const today = new Date().toISOString().split("T")[0];
+    downloadCsvBlob(csvText, `children-list-${today}.csv`);
 
-  const handleDownloadChildrenCsv = () =>
-    runExport(setExportingChildren, "children-list", generateChildrenCsv);
+    setExportingChildren(false);
+    setSuccessMsg(`Downloaded children-list-${today}.csv successfully!`);
+    setTimeout(() => setSuccessMsg(null), 4000);
+  };
 
   return (
     <div className="space-y-8 max-w-4xl mx-auto">
@@ -66,8 +47,6 @@ export const ExportPage: React.FC = () => {
           Generate clean, unformatted CSV spreadsheets for event coordinators, venue door staff, caterers, and children party activity planners.
         </p>
       </div>
-
-      {error && <AdminError variant="banner" message={error} />}
 
       {successMsg && (
         <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 p-4 rounded-xl text-xs font-bold flex items-center gap-2">

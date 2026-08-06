@@ -7,10 +7,14 @@ import { RsvpSection } from "../components/RsvpSection";
 import { FaqSection } from "../components/FaqSection";
 import { Footer } from "../components/Footer";
 import { SectionDivider } from "../components/ui/SectionDivider";
+import { WebShooterFX } from "../components/ui/WebShooterFX";
 
 export default function Home() {
   return (
-    <main className="min-h-screen bg-[#FDF6E3] text-[#111111] font-body selection:bg-[#FF4081] selection:text-white overflow-x-hidden">
+    <main className="min-h-screen bg-[#FDF6E3] text-[#111111] font-body selection:bg-[#E62429] selection:text-white overflow-x-hidden relative">
+      {/* Spider Web Shooter Global FX Layer */}
+      <WebShooterFX />
+
       {/* 1. HERO SECTION */}
       <Hero />
 
@@ -38,3 +42,4 @@ export default function Home() {
     </main>
   );
 }
+

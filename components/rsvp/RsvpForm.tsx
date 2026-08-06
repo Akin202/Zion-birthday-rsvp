@@ -10,6 +10,8 @@ import { ToggleChoice } from "../ui/ToggleChoice";
 import { Stepper } from "../ui/Stepper";
 import { ComicButton } from "../ui/ComicButton";
 import { SpeechBubble } from "../ui/SpeechBubble";
+import { SpiderMaskIcon } from "../ui/SpiderMaskIcon";
+import { SpiderEmblem } from "../ui/SpiderEmblem";
 import { useReducedMotion } from "../../hooks/useReducedMotion";
 import {
   User,
@@ -154,17 +156,17 @@ export const RsvpForm: React.FC<RsvpFormProps> = ({
         className="space-y-8 text-[#111111]"
       >
         {/* Personal Details Panel */}
-        <div className="bg-white border-[3px] border-[#111111] p-6 sm:p-8 shadow-[6px_6px_0px_#111111]">
+        <div className="bg-white border-[3.5px] border-[#111111] p-6 sm:p-8 shadow-[6px_6px_0px_#111111]">
           <div className="flex items-center gap-3 pb-4 mb-6 border-b-[3px] border-[#111111]">
-            <div className="w-10 h-10 bg-[#FFD700] border-2 border-[#111111] flex items-center justify-center font-display text-xl text-[#111111]">
-              <User className="w-5 h-5 stroke-[2.5]" />
+            <div className="w-10 h-10 bg-[#E62429] text-white border-2 border-[#111111] flex items-center justify-center font-display text-xl shadow-[2px_2px_0px_#111111]">
+              <SpiderMaskIcon size={24} />
             </div>
             <div>
               <h3 className="font-display text-2xl uppercase tracking-wide text-[#111111]">
-                GUEST IDENTITY & CONTACT
+                HERO IDENTITY & CONTACT
               </h3>
               <p className="font-body text-xs font-semibold text-slate-600">
-                Required for Superhero HQ Check-in
+                Required for Spider-HQ Entrance Pass
               </p>
             </div>
           </div>
@@ -620,7 +622,7 @@ export const RsvpForm: React.FC<RsvpFormProps> = ({
         <div className="pt-2 text-center">
           <ComicButton
             type="submit"
-            variant="primary"
+            variant="accent"
             size="lg"
             disabled={isSubmitting}
             className="w-full sm:w-auto px-10 py-5 text-2xl sm:text-3xl tracking-wider gap-3 shadow-[8px_8px_0px_#111111] hover:shadow-[4px_4px_0px_#111111]"
@@ -628,18 +630,18 @@ export const RsvpForm: React.FC<RsvpFormProps> = ({
             {isSubmitting ? (
               <>
                 <Loader2 className="w-8 h-8 animate-spin text-[#FFD700]" />
-                <span>SENDING YOUR RSVP...</span>
+                <span>DISPATCHING SPIDER RSVP...</span>
               </>
             ) : (
               <>
-                <Sparkles className="w-8 h-8 text-[#FFD700]" />
-                <span>SEND MY RSVP 🚀</span>
+                <SpiderMaskIcon size={32} />
+                <span>THWIP! SEND SPIDER RSVP 🚀</span>
               </>
             )}
           </ComicButton>
           <p className="font-body text-xs font-bold text-slate-500 mt-3 flex items-center justify-center gap-1">
-            <ShieldCheck className="w-4 h-4 text-[#00AEEF]" />
-            <span>Instant confirmation. No registration required.</span>
+            <ShieldCheck className="w-4 h-4 text-[#E62429]" />
+            <span>Instant Spider-HQ confirmation. No registration required.</span>
           </p>
         </div>
       </form>

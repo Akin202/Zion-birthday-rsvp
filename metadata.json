@@ -1,0 +1,6 @@
+{
+  "name": "Zion's 7th Birthday Celebration RSVP",
+  "description": "Spider-Man superhero comic book styled children's birthday party RSVP website for Zion Awolowo with interactive web shooter effects and animations.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
