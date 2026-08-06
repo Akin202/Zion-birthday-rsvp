@@ -161,7 +161,7 @@ export const RsvpSection: React.FC = () => {
               </div>
 
               <div className="space-y-3">
-                <BurstBadge text="RSVP CLOSED" bg="bg-[#E23636]" textColor="text-white" size="lg" />
+                <BurstBadge text="RSVP CLOSED" color="#E23636" textColor="#FFFFFF" size="lg" />
                 <h3 className="font-display text-3xl sm:text-4xl uppercase text-[#111111]">
                   RESERVATIONS ARE NOW CLOSED
                 </h3>
@@ -319,7 +319,7 @@ export const RsvpSection: React.FC = () => {
                     <ComicPanel rotate={1} bg="bg-white" className="p-6 sm:p-10 space-y-8 relative z-10 border-[4px]">
                       {/* Top Burst Badge & Header */}
                       <div className="text-center space-y-4">
-                        <BurstBadge text="YOU'RE IN!" bg="bg-[#00AEEF]" textColor="text-white" size="lg" />
+                        <BurstBadge text="YOU'RE IN!" color="#00AEEF" textColor="#FFFFFF" size="lg" />
 
                         <h3 className="font-display text-4xl sm:text-6xl uppercase text-[#111111] tracking-wider drop-shadow-[2px_2px_0px_#FFD700]">
                           SUPERHERO RSVP CONFIRMED!
@@ -440,7 +440,7 @@ export const RsvpSection: React.FC = () => {
                           rel="noopener noreferrer"
                           className="w-full sm:w-auto"
                         >
-                          <ComicButton variant="yellow" size="md" className="w-full gap-2 text-base">
+                          <ComicButton variant="accent" size="md" className="w-full gap-2 text-base">
                             <MapPin className="w-5 h-5" />
                             <span>GET DIRECTIONS</span>
                           </ComicButton>
@@ -490,7 +490,7 @@ export const RsvpSection: React.FC = () => {
                       </div>
 
                       <div className="space-y-3">
-                        <BurstBadge text="ALREADY RSVP'D!" bg="bg-[#111111]" textColor="text-[#FFD700]" size="lg" />
+                        <BurstBadge text="ALREADY RSVP'D!" color="#111111" textColor="#FFD700" size="lg" />
                         <h3 className="font-display text-3xl sm:text-4xl uppercase text-[#111111]">
                           LOOKS LIKE YOU'VE ALREADY RSVP'D!
                         </h3>
@@ -542,9 +542,9 @@ export const RsvpSection: React.FC = () => {
                       </div>
 
                       <div className="space-y-3">
-                        <BurstBadge text="TRANSMISSION ERROR" bg="bg-[#E23636]" textColor="text-white" size="lg" />
+                        <BurstBadge text="TRANSMISSION ERROR" color="#E23636" textColor="#FFFFFF" size="lg" />
                         <h3 className="font-display text-3xl sm:text-4xl uppercase text-[#111111]">
-                          GOTHAM COMMUNICATIONS ARE DOWN!
+                          OUR SIGNAL WENT DOWN!
                         </h3>
                         <p className="font-body text-base font-bold text-slate-700 max-w-md mx-auto">
                           {submissionState.status === "error"
@@ -583,7 +583,7 @@ export const RsvpSection: React.FC = () => {
         </div>
 
         {/* TEMPORARY DEV-ONLY STATE SWITCHER FOR TESTING */}
-        {process.env.NODE_ENV === "development" && (
+        {import.meta.env.DEV && (
           <div className="fixed bottom-4 left-4 z-50 bg-[#111111] text-white border-2 border-[#FFD700] p-3 shadow-[4px_4px_0px_#FFD700] font-body text-xs rounded-none max-w-xs">
             <div className="flex items-center justify-between gap-2 border-b border-white/20 pb-1 mb-2 font-display text-sm text-[#FFD700]">
               <span className="flex items-center gap-1">

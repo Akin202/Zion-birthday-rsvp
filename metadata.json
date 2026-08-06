@@ -1,6 +1,0 @@
-{
-  "name": "Zion's 7th Birthday Celebration RSVP",
-  "description": "Comic book superhero styled children's birthday party RSVP front-end website for Zion Awolowo",
-  "requestFramePermissions": [],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
-}
