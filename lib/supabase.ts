@@ -38,20 +38,8 @@ export const supabase: SupabaseClient = createClient(
   },
 );
 
-/**
- * Reads a single RSVP using its edit token. The token goes in a header, not a
- * query predicate — the RLS policy reads it from the request headers, so the
- * client cannot widen the query to return anyone else's row.
- */
-export function supabaseWithEditToken(token: string): SupabaseClient {
-  return createClient(
-    SUPABASE_URL || "http://localhost:54321",
-    SUPABASE_ANON_KEY || "missing-anon-key",
-    {
-      auth: { persistSession: false },
-      global: { headers: { "x-rsvp-edit-token": token } },
-    },
-  );
-}
+// A supabaseWithEditToken() helper used to live here. It was removed once
+// lib/rsvp-edit.ts landed: the edit page is on the guest path, so it reads by
+// token with plain fetch rather than instantiating a second full client.
 
 export { isSupabaseConfigured };

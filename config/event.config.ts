@@ -30,4 +30,19 @@ export const eventConfig = {
     newsprint: "#FDF6E3", popPink: "#FF4081", popCyan: "#00AEEF", popYellow: "#FFD700",
   },
   agency: { name: "FlagIQ", url: "https://flagiq.org" },
+  confirmation: {
+    /** Public origin of the deployed site. Used to build the RSVP edit link. */
+    siteUrl: "https://zionsbirthday.online",
+    fromName: "Zion's Birthday",
+    /** Must be on a domain verified with Resend, or delivery silently fails. */
+    fromEmail: "rsvp@zionsbirthday.online",
+    attendingSubject: "You're on the list for Zion's 7th Birthday!",
+    attendingMessage:
+      "We've got you down. Zion is going to be so happy to see you there.",
+    decliningSubject: "Thanks for letting us know",
+    decliningMessage:
+      "We're sorry you can't make it — thank you for taking the time to tell us. We'll be sure to send Zion your good wishes.",
+    additionalInfo:
+      "Parking is available on site. Please arrive a few minutes early so we can check you in without a queue.",
+  },
 } as const;

@@ -18,7 +18,9 @@
     "db:reset": "supabase db reset",
     "db:push": "supabase db push",
     "verify:rls": "NODE_OPTIONS=--experimental-websocket tsx scripts/verify-rls.ts",
-    "verify:db": "NODE_OPTIONS=--experimental-websocket tsx scripts/verify-rsvp-functions.ts"
+    "verify:db": "NODE_OPTIONS=--experimental-websocket tsx scripts/verify-rsvp-functions.ts",
+    "verify:edit": "NODE_OPTIONS=--experimental-websocket tsx scripts/verify-edit-flow.ts",
+    "admin:create": "NODE_OPTIONS=--experimental-websocket tsx scripts/create-admin.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.7.1",

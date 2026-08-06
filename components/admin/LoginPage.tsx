@@ -1,17 +1,38 @@
 import React, { useState } from "react";
+import { useLocation } from "react-router-dom";
 import { useRouter } from "../../lib/router";
 import { eventConfig } from "../../config/event.config";
-import { Lock, Mail, ShieldCheck, ArrowLeft } from "lucide-react";
+import { signIn } from "../../lib/auth";
+import { AdminError } from "./AdminError";
+import { Lock, Mail, ShieldCheck, ArrowLeft, Loader2 } from "lucide-react";
 
 export const LoginPage: React.FC = () => {
   const { navigate } = useRouter();
-  const [email, setEmail] = useState("admin@hero-hq.com");
-  const [password, setPassword] = useState("••••••••");
+  const location = useLocation();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  /** Set by RequireAuth when it bounced someone off a protected route. */
+  const returnTo = (location.state as { from?: string } | null)?.from ?? "/admin";
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO(claude-code): wire to Supabase Auth
-    navigate("/admin");
+    if (submitting) return;
+
+    setSubmitting(true);
+    setError(null);
+
+    const result = await signIn(email, password);
+
+    if (result.ok) {
+      navigate(returnTo);
+      return;
+    }
+
+    setError(result.message);
+    setSubmitting(false);
   };
 
   return (
@@ -41,6 +62,8 @@ export const LoginPage: React.FC = () => {
               Authorized event staff & host portal for {eventConfig.celebrant.name}'s 7th Birthday
             </p>
           </div>
+
+          {error && <AdminError variant="banner" message={error} />}
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-1.5">
@@ -85,15 +108,17 @@ export const LoginPage: React.FC = () => {
 
             <button
               type="submit"
-              className="w-full bg-rose-600 hover:bg-rose-700 text-white font-bold py-3 px-4 rounded-lg text-sm transition-colors shadow-sm mt-2"
+              disabled={submitting}
+              className="w-full bg-rose-600 hover:bg-rose-700 disabled:bg-rose-400 text-white font-bold py-3 px-4 rounded-lg text-sm transition-colors shadow-sm mt-2 flex items-center justify-center gap-2"
             >
-              Sign In to Admin Dashboard
+              {submitting && <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />}
+              <span>{submitting ? "Signing in…" : "Sign In to Admin Dashboard"}</span>
             </button>
           </form>
 
           <div className="pt-4 border-t border-slate-100 text-center">
             <p className="text-[11px] text-slate-400">
-              Note: Front-end demo authentication enabled for testing.
+              Access is limited to accounts created by {eventConfig.agency.name}.
             </p>
           </div>
         </div>

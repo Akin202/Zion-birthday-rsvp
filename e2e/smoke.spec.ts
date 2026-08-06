@@ -1,4 +1,4 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 
 /**
  * Phase 0 smoke coverage: proves the react-router migration actually serves every
@@ -24,33 +24,37 @@ test('name gate appears before the RSVP form', async ({ page }) => {
   await expect(gate).toBeVisible();
 });
 
-test.describe('admin routes resolve on direct navigation', () => {
-  // Match on page body content, not the nav — the desktop sidebar renders its
-  // labels on mobile too, just hidden, so nav text would pass even if the route
-  // failed to load.
-  const cases = [
-    { path: '/admin', locate: (p: Page) => p.getByText('Total Expected Headcount').first() },
-    {
-      path: '/admin/guests',
-      locate: (p: Page) => p.getByPlaceholder('Search guest name, email, or phone...'),
-    },
-    { path: '/admin/checkin', locate: (p: Page) => p.getByText('Door Check-In Station').first() },
-    { path: '/admin/export', locate: (p: Page) => p.getByText('Data Export Console').first() },
-  ];
+test.describe('admin routes are gated', () => {
+  // The route guard is UX, not the security boundary — RLS is, and it holds
+  // regardless of what the browser renders. What these assert is that a signed
+  // out visitor lands on the login form rather than an admin shell whose every
+  // query silently returns nothing.
+  const adminPaths = ['/admin', '/admin/guests', '/admin/checkin', '/admin/export'];
 
-  for (const { path, locate } of cases) {
-    test(`${path} loads its lazy chunk`, async ({ page }) => {
+  for (const path of adminPaths) {
+    test(`${path} redirects a signed-out visitor to login`, async ({ page }) => {
       await page.goto(path);
-      await expect(locate(page)).toBeVisible({ timeout: 15_000 });
+      await expect(page).toHaveURL(/\/admin\/login$/, { timeout: 15_000 });
+      await expect(page.getByRole('heading', { name: /Admin Console Sign In/i })).toBeVisible();
     });
   }
+
+  test('the login form asks for an email and a password, both empty', async ({ page }) => {
+    await page.goto('/admin/login');
+    // The AI Studio stub shipped with credentials prefilled and accepted any
+    // input. Both fields must start blank.
+    await expect(page.locator('#adminEmail')).toHaveValue('');
+    await expect(page.locator('#adminPassword')).toHaveValue('');
+  });
 });
 
-test('door check-in exposes an autofocused search input', async ({ page }) => {
-  await page.goto('/admin/checkin');
-  const search = page.getByPlaceholder('Search guest name...');
-  await expect(search).toBeVisible();
-  await expect(search).toBeFocused();
+test('the RSVP edit page rejects a missing token without a dead end', async ({ page }) => {
+  await page.goto('/rsvp/edit');
+  await expect(page.getByRole('heading', { name: /This link isn't working/i })).toBeVisible({
+    timeout: 15_000,
+  });
+  // Never a dead end: there is always a way to reach a human.
+  await expect(page.getByRole('link')).toHaveAttribute('href', /wa\.me/);
 });
 
 test('guest bundle does not pull in the admin chunk', async ({ page }) => {

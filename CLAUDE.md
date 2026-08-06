@@ -105,7 +105,21 @@ npm test               # vitest unit tests
 npm run test:coverage  # coverage report
 npm run test:e2e       # playwright
 npx supabase db push   # apply migrations
+
+npm run verify:rls     # 10 checks: guest list must not be readable with the anon key
+npm run verify:db      # 11 checks: headcount, atomicity, duplicate handling
+npm run verify:edit    # 13 checks: edit-token read/write path (needs `functions serve`)
+
+# Provisions the /admin login. There is no sign-up form — see .env.example.
+ADMIN_EMAIL=... ADMIN_PASSWORD=... npm run admin:create
 ```
+
+The three `verify:*` scripts read credentials from the running local stack
+automatically; set `SUPABASE_URL` / `SUPABASE_ANON_KEY` /
+`SUPABASE_SERVICE_ROLE_KEY` explicitly to point them at a real project.
+
+**Run the whole gate before every commit**, not just `build`. Skipping it is what
+let bundle-size and RLS-grant regressions land unnoticed earlier in this build.
 
 ## Git
 
@@ -114,13 +128,29 @@ to the `Akin202` (FlagIQ) GitHub identity → `github-akin202`. Confirm before p
 
 ## Current state
 
-**Phase 0 complete.** Build and typecheck are green, the duplicate `src/` stub tree
-and all Google AI Studio residue are gone, routing is real (`react-router-dom` with
-lazy admin chunks), and Vitest + Playwright are wired with 51 unit tests and 9 E2E
-smoke tests passing.
+**Phases 0 and 1 complete; Phase 2 partly done.** This is a demoable MVP.
 
-Still rendering from `lib/mock-data.ts` through the `lib/data-access.ts` seam —
-**no backend exists yet.** Next: Supabase schema, RLS, and live RSVP submission.
+Working end to end: Supabase schema and RLS, live RSVP submission through the
+`submit-rsvp` Edge Function, the `/rsvp/edit?token=` flow through `update-rsvp`,
+Resend confirmation emails (attending and declining), Supabase Auth on `/admin`,
+and real Supabase queries behind `lib/data-access.ts`. `lib/mock-data.ts` is gone.
+
+Gate at this commit: typecheck + build clean, 115 unit, 20 E2E, RLS 10/10,
+DB functions 11/11, edit flow 13/13.
+
+**Not yet built** (rest of Phase 2 and all of Phase 3):
+
+- Realtime subscription on the overview dashboard — figures are fetch-on-load.
+- **Offline queue for the door tool.** The highest-value gap. Check-ins currently
+  require a live connection; a failure is surfaced loudly rather than queued.
+- Child rows cannot be edited from the admin guest modal (parent fields only).
+- Motion polish, measured performance pass, WhatsApp OG image, axe-core audit,
+  404 + error boundary, white-label (161 hardcoded hexes still bypass
+  `config.theme`), README, Vercel deploy.
+
+Before a real launch: `RESEND_API_KEY` and a verified Resend domain, an admin
+account via `npm run admin:create`, and `RSVP_DEADLINE` set as an Edge Function
+secret. Email and deadline enforcement both fail open without them.
 
 A visual redesign is planned but deferred; the client has not yet supplied the new
 direction. Build against the current comic-book UI — components are pure

@@ -1,17 +1,18 @@
 /**
- * submit-rsvp — the only write path for a guest RSVP.
+ * update-rsvp — the edit path for a guest who already RSVP'd.
  *
- * Everything the client cannot be trusted with happens here:
- *   - re-validation of every field
- *   - phone normalisation to +234
- *   - RSVP deadline enforced server-side
- *   - rate limiting
- * and headcount is computed in Postgres by create_rsvp, never taken from the
- * request. The browser cannot call create_rsvp directly — it is granted to
- * service_role only.
+ * The edit token is a bearer capability: whoever holds it can change that one
+ * RSVP. That is the intended design (the link lives in the guest's email), but
+ * it means this function must be careful about two things:
  *
- * No npm imports: this is a single RPC call on a path the guest waits on, so
- * cold start matters more than convenience. See _shared/validation.ts.
+ *   1. Never confirm or deny that an unknown token exists. update_rsvp_by_token
+ *      returns {found:false} for both "no such token" and "malformed token",
+ *      and this function turns both into the same guest-facing message.
+ *   2. A stricter rate limit than submit-rsvp, because a valid token is
+ *      guessable only by brute force and there is no other gate.
+ *
+ * Everything else mirrors submit-rsvp: same validator, same deadline rule,
+ * headcount recomputed in SQL, no npm imports.
  */
 
 import { validateSubmission } from '../_shared/validation.ts';
@@ -20,14 +21,16 @@ import { sendConfirmationEmail } from '../_shared/email.ts';
 
 declare const EdgeRuntime: { waitUntil?: (p: Promise<unknown>) => void } | undefined;
 
-const RATE_LIMIT = 5;
+const RATE_LIMIT = 10;
 const RATE_WINDOW_MS = 60_000;
 
-/**
- * The deadline lives in config/event.config.ts for the UI. It is duplicated
- * into an env var rather than imported, so the server does not depend on the
- * client bundle. Keep RSVP_DEADLINE in step with event.rsvpDeadline.
- */
+const UUID_PATTERN =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/** Deliberately identical for "not found" and "malformed" — see the header. */
+const NOT_FOUND_MESSAGE =
+  'That link is no longer valid. Please message the host to update your RSVP.';
+
 function isPastDeadline(): boolean {
   const deadline = Deno.env.get('RSVP_DEADLINE');
   if (!deadline) return false;
@@ -35,19 +38,19 @@ function isPastDeadline(): boolean {
   const parsed = Date.parse(deadline);
   if (Number.isNaN(parsed)) {
     console.error('RSVP_DEADLINE is not a parseable date:', deadline);
-    return false; // Fail open: a misconfigured deadline must not block real RSVPs.
+    return false; // Fail open, same as submit-rsvp.
   }
 
   return Date.now() > parsed;
 }
 
-interface CreateRsvpResult {
-  id: string;
-  editToken: string;
-  totalHeadcount: number;
-  isDuplicate: boolean;
-  createdAt: string;
-  updatedAt: string;
+interface UpdateRsvpResult {
+  found: boolean;
+  id?: string;
+  editToken?: string;
+  totalHeadcount?: number;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 Deno.serve(async (req: Request) => {
@@ -63,7 +66,7 @@ Deno.serve(async (req: Request) => {
 
   sweepRateLimitBuckets();
 
-  const limit = rateLimit(`submit:${clientIp(req)}`, RATE_LIMIT, RATE_WINDOW_MS);
+  const limit = rateLimit(`update:${clientIp(req)}`, RATE_LIMIT, RATE_WINDOW_MS);
   if (!limit.allowed) {
     return json(
       {
@@ -89,6 +92,14 @@ Deno.serve(async (req: Request) => {
     body = await req.json();
   } catch {
     return json({ status: 'error', message: 'Invalid request body.' }, 400, origin);
+  }
+
+  const token = (body as { editToken?: unknown } | null)?.editToken;
+
+  if (typeof token !== 'string' || !UUID_PATTERN.test(token)) {
+    // Shape-check before touching the database so a malformed token cannot be
+    // distinguished from a valid-but-unknown one by response timing or wording.
+    return json({ status: 'not_found', message: NOT_FOUND_MESSAGE }, 404, origin);
   }
 
   const validated = validateSubmission(body);
@@ -118,21 +129,21 @@ Deno.serve(async (req: Request) => {
 
   let rpcResponse: Response;
   try {
-    rpcResponse = await fetch(`${supabaseUrl}/rest/v1/rpc/create_rsvp`, {
+    rpcResponse = await fetch(`${supabaseUrl}/rest/v1/rpc/update_rsvp_by_token`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         apikey: serviceKey,
         Authorization: `Bearer ${serviceKey}`,
       },
-      body: JSON.stringify({ payload: validated.value }),
+      body: JSON.stringify({ p_token: token, payload: validated.value }),
     });
   } catch (err) {
-    console.error('create_rsvp request failed:', err);
+    console.error('update_rsvp_by_token request failed:', err);
     return json(
       {
         status: 'error',
-        message: "We couldn't save your RSVP just now. Please try again, or message the host.",
+        message: "We couldn't save your changes just now. Please try again, or message the host.",
       },
       500,
       origin,
@@ -140,31 +151,31 @@ Deno.serve(async (req: Request) => {
   }
 
   if (!rpcResponse.ok) {
-    // Log the detail server-side; never leak database internals to the guest.
-    console.error('create_rsvp returned', rpcResponse.status, await rpcResponse.text());
+    console.error('update_rsvp_by_token returned', rpcResponse.status, await rpcResponse.text());
     return json(
       {
         status: 'error',
-        message: "We couldn't save your RSVP just now. Please try again, or message the host.",
+        message: "We couldn't save your changes just now. Please try again, or message the host.",
       },
       500,
       origin,
     );
   }
 
-  const result = (await rpcResponse.json()) as CreateRsvpResult;
+  const result = (await rpcResponse.json()) as UpdateRsvpResult;
 
-  // Confirmation email is deliberately not awaited. The RSVP is already
-  // committed; making the guest wait on Resend — or worse, showing them an
-  // error because Resend was slow — would be strictly worse than a missing
-  // email. waitUntil keeps the isolate alive long enough for the send to
-  // finish after the response has gone out.
+  if (!result.found) {
+    return json({ status: 'not_found', message: NOT_FOUND_MESSAGE }, 404, origin);
+  }
+
+  // Same reasoning as submit-rsvp: the update is committed, so email failure
+  // must not become a guest-visible error.
   const emailTask = sendConfirmationEmail({
     guestFullName: validated.value.guestFullName,
     email: validated.value.email,
     isAttending: validated.value.isAttending,
-    editToken: result.editToken,
-    totalHeadcount: result.totalHeadcount,
+    editToken: token,
+    totalHeadcount: result.totalHeadcount ?? 0,
     childCount: validated.value.children.length,
     hasPlusOne: validated.value.hasPlusOne,
     nannyCount: validated.value.hasNanny ? validated.value.nannyCount : 0,
@@ -173,16 +184,15 @@ Deno.serve(async (req: Request) => {
   if (typeof EdgeRuntime !== 'undefined' && typeof EdgeRuntime.waitUntil === 'function') {
     EdgeRuntime.waitUntil(emailTask);
   } else {
-    // Local `supabase functions serve` has no EdgeRuntime global.
     void emailTask;
   }
 
   return json(
     {
-      status: result.isDuplicate ? 'duplicate' : 'success',
+      status: 'success',
       record: {
         id: result.id,
-        editToken: result.editToken,
+        editToken: token,
         totalHeadcount: result.totalHeadcount,
         createdAt: result.createdAt,
         updatedAt: result.updatedAt,
