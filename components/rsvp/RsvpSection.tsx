@@ -32,6 +32,16 @@ import {
 export const RsvpSection: React.FC = () => {
   const shouldReduceMotion = useReducedMotion();
 
+  // Helper to scroll smoothly to top of RSVP section
+  const scrollToRsvpSection = () => {
+    if (typeof window !== "undefined") {
+      const el = document.getElementById("rsvp");
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    }
+  };
+
   // 1. Name Gate State
   const [gateInputName, setGateInputName] = useState("");
   const [gateError, setGateError] = useState<string | null>(null);
@@ -65,6 +75,7 @@ export const RsvpSection: React.FC = () => {
     setGateError(null);
     setEnteredName(trimmed);
     setIsNameSubmitted(true);
+    setTimeout(scrollToRsvpSection, 50);
   };
 
   // Handle Form Submit
@@ -87,6 +98,9 @@ export const RsvpSection: React.FC = () => {
         status: "success",
         record: mockRecord,
       });
+
+      // Scroll to top of RSVP section so user clearly sees success message
+      setTimeout(scrollToRsvpSection, 50);
     }, 900);
   };
 
@@ -229,7 +243,6 @@ export const RsvpSection: React.FC = () => {
                               if (gateError) setGateError(null);
                             }}
                             placeholder="e.g. Samuel Okon"
-                            autoFocus
                             className="w-full bg-[#FFFDF5] border-[3.5px] border-[#111111] p-4 text-center font-display text-2xl uppercase tracking-wider text-[#111111] placeholder:text-slate-400 placeholder:normal-case placeholder:font-body placeholder:text-lg outline-none focus:border-[#E62429] focus:ring-4 focus:ring-[#E62429]/20"
                           />
                           {gateError && (
@@ -286,6 +299,7 @@ export const RsvpSection: React.FC = () => {
                           onClick={() => {
                             setIsNameSubmitted(false);
                             setGateInputName("");
+                            scrollToRsvpSection();
                           }}
                           className="font-body text-xs font-bold text-[#111111] underline hover:text-[#E62429] transition-colors"
                         >
@@ -471,7 +485,10 @@ export const RsvpSection: React.FC = () => {
                       <div className="text-center pt-4 border-t-2 border-dashed border-[#111111]/20">
                         <button
                           type="button"
-                          onClick={() => setSubmissionState({ status: "idle" })}
+                          onClick={() => {
+                            setSubmissionState({ status: "idle" });
+                            scrollToRsvpSection();
+                          }}
                           className="font-body text-xs font-bold text-slate-600 underline hover:text-[#E62429]"
                         >
                           Need to update your answers? Click to re-open form.
@@ -522,7 +539,10 @@ export const RsvpSection: React.FC = () => {
 
                         <button
                           type="button"
-                          onClick={() => setSubmissionState({ status: "idle" })}
+                          onClick={() => {
+                            setSubmissionState({ status: "idle" });
+                            scrollToRsvpSection();
+                          }}
                           className="font-body text-xs font-bold text-[#111111] underline hover:text-[#E62429] px-4 py-2"
                         >
                           Back to Form
@@ -576,7 +596,10 @@ export const RsvpSection: React.FC = () => {
 
                         <button
                           type="button"
-                          onClick={() => setSubmissionState({ status: "idle" })}
+                          onClick={() => {
+                            setSubmissionState({ status: "idle" });
+                            scrollToRsvpSection();
+                          }}
                           className="font-body text-xs font-bold text-slate-600 underline hover:text-[#E62429] px-4 py-2"
                         >
                           Try Again
