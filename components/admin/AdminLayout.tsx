@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { useRouter } from "../../lib/router";
 import { eventConfig } from "../../config/event.config";
 import {
@@ -20,6 +20,14 @@ interface AdminLayoutProps {
 export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
   const { path, navigate } = useRouter();
 
+  // Auth guard: redirect to login if not authenticated
+  useEffect(() => {
+    const isAuth = sessionStorage.getItem("admin_authenticated");
+    if (!isAuth) {
+      navigate("/admin/login");
+    }
+  }, [navigate]);
+
   const navItems = [
     { label: "Overview", route: "/admin", icon: LayoutDashboard },
     { label: "Guest List", route: "/admin/guests", icon: Users },
@@ -28,7 +36,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
   ];
 
   const handleSignOut = () => {
-    // TODO(claude-code): wire to Supabase Auth sign-out
+    sessionStorage.removeItem("admin_authenticated");
     navigate("/admin/login");
   };
 

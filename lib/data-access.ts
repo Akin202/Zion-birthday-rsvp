@@ -1,21 +1,42 @@
-// TODO(claude-code): replace every function body with real Supabase queries.
-// Signatures must not change — components depend on them.
+// Supabase-backed data access layer.
+// Function signatures are unchanged — components depend on them.
 
-import { RsvpRecord, RsvpStats, calculateHeadcount } from "../types/rsvp";
-import { MOCK_RSVPS } from "./mock-data";
+import { RsvpRecord, RsvpFormValues, RsvpStats, SubmissionState, calculateHeadcount } from "../types/rsvp";
+import { RsvpRow, fromDbRecord, toDbRecord } from "../types/db-types";
+import { supabase } from "./supabase";
 
-// In-memory state store initialized with deep copy of MOCK_RSVPS
-let store: RsvpRecord[] = [...MOCK_RSVPS];
-
-const simulateDelay = (ms = 200) => new Promise((resolve) => setTimeout(resolve, ms));
+// ---------------------------------------------------------------------------
+// READ
+// ---------------------------------------------------------------------------
 
 export async function getAllRsvps(): Promise<RsvpRecord[]> {
-  await simulateDelay();
-  return [...store];
+  const { data, error } = await supabase
+    .from("rsvps")
+    .select("*")
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error("getAllRsvps error:", error);
+    throw new Error(error.message);
+  }
+
+  return (data as RsvpRow[]).map(fromDbRecord);
 }
 
 export async function getRsvpStats(): Promise<RsvpStats> {
-  await simulateDelay();
+  // Fetch all rows — the stats computation happens in JS to match existing
+  // interface shape exactly.  For a birthday RSVP list the row count is small
+  // enough that this is fine.
+  const { data, error } = await supabase
+    .from("rsvps")
+    .select("*");
+
+  if (error) {
+    console.error("getRsvpStats error:", error);
+    throw new Error(error.message);
+  }
+
+  const store = (data as RsvpRow[]).map(fromDbRecord);
 
   const totalResponses = store.length;
   const attendingList = store.filter((r) => r.isAttending);
@@ -114,18 +135,70 @@ export async function getRsvpStats(): Promise<RsvpStats> {
   };
 }
 
-export async function searchRsvpsByName(q: string): Promise<RsvpRecord[]> {
-  await simulateDelay(150);
-  const trimmed = q.trim().toLowerCase();
-  if (!trimmed) return [...store];
+// ---------------------------------------------------------------------------
+// SEARCH
+// ---------------------------------------------------------------------------
 
-  return store.filter(
-    (r) =>
-      r.guestFullName.toLowerCase().includes(trimmed) ||
-      (r.plusOneName && r.plusOneName.toLowerCase().includes(trimmed)) ||
-      (r.email && r.email.toLowerCase().includes(trimmed)) ||
-      (r.phone && r.phone.includes(trimmed))
-  );
+export async function searchRsvpsByName(q: string): Promise<RsvpRecord[]> {
+  const trimmed = q.trim().toLowerCase();
+  if (!trimmed) return getAllRsvps();
+
+  // Use ilike for flexible text search across multiple columns
+  const { data, error } = await supabase
+    .from("rsvps")
+    .select("*")
+    .or(
+      `guest_full_name.ilike.%${trimmed}%,` +
+      `plus_one_name.ilike.%${trimmed}%,` +
+      `email.ilike.%${trimmed}%,` +
+      `phone.ilike.%${trimmed}%`
+    )
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error("searchRsvpsByName error:", error);
+    throw new Error(error.message);
+  }
+
+  return (data as RsvpRow[]).map(fromDbRecord);
+}
+
+// ---------------------------------------------------------------------------
+// WRITE
+// ---------------------------------------------------------------------------
+
+/** Submit a new RSVP. Returns the submission state for the UI. */
+export async function submitRsvp(
+  values: RsvpFormValues
+): Promise<SubmissionState> {
+  const headcount = calculateHeadcount(values);
+
+  const payload = {
+    ...toDbRecord({
+      ...values,
+      totalHeadcount: headcount,
+    } as RsvpRecord),
+  };
+
+  const { data, error } = await supabase
+    .from("rsvps")
+    .insert(payload)
+    .select()
+    .single();
+
+  if (error) {
+    // Unique constraint violation on email → duplicate RSVP
+    if (error.code === "23505") {
+      return { status: "duplicate" };
+    }
+    console.error("submitRsvp error:", error);
+    return { status: "error", message: error.message };
+  }
+
+  return {
+    status: "success",
+    record: fromDbRecord(data as RsvpRow),
+  };
 }
 
 export async function setCheckedIn(
@@ -133,37 +206,85 @@ export async function setCheckedIn(
   checkedIn: boolean,
   actual?: number
 ): Promise<void> {
-  await simulateDelay(100);
-  store = store.map((r) => {
-    if (r.id === id) {
-      const now = new Date().toISOString();
-      return {
-        ...r,
-        checkedIn,
-        checkedInAt: checkedIn ? now : null,
-        actualHeadcount: checkedIn ? (actual ?? r.totalHeadcount) : null,
-        updatedAt: now,
-      };
-    }
-    return r;
-  });
+  const now = new Date().toISOString();
+
+  const { error } = await supabase
+    .from("rsvps")
+    .update({
+      checked_in: checkedIn,
+      checked_in_at: checkedIn ? now : null,
+      actual_headcount: checkedIn ? (actual ?? null) : null,
+    })
+    .eq("id", id);
+
+  if (error) {
+    console.error("setCheckedIn error:", error);
+    throw new Error(error.message);
+  }
 }
 
 export async function updateRsvp(
   id: string,
   patch: Partial<RsvpRecord>
 ): Promise<void> {
-  await simulateDelay(150);
-  store = store.map((r) => {
-    if (r.id === id) {
-      const updated = {
-        ...r,
-        ...patch,
-        updatedAt: new Date().toISOString(),
-      };
-      updated.totalHeadcount = calculateHeadcount(updated);
-      return updated;
+  // Recalculate headcount if attendance-related fields are being patched
+  const dbPatch = toDbRecord(patch);
+
+  // If enough fields are present to recalculate headcount, do so
+  if (
+    patch.isAttending !== undefined ||
+    patch.hasPlusOne !== undefined ||
+    patch.children !== undefined ||
+    patch.hasNanny !== undefined ||
+    patch.nannyCount !== undefined
+  ) {
+    // We need the full record to recalculate accurately
+    const { data: current, error: fetchError } = await supabase
+      .from("rsvps")
+      .select("*")
+      .eq("id", id)
+      .single();
+
+    if (!fetchError && current) {
+      const merged = { ...fromDbRecord(current as RsvpRow), ...patch };
+      dbPatch.total_headcount = calculateHeadcount(merged);
     }
-    return r;
-  });
+  }
+
+  const { error } = await supabase
+    .from("rsvps")
+    .update(dbPatch)
+    .eq("id", id);
+
+  if (error) {
+    console.error("updateRsvp error:", error);
+    throw new Error(error.message);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// REALTIME
+// ---------------------------------------------------------------------------
+
+/**
+ * Subscribe to changes on the rsvps table.
+ * Returns an unsubscribe function.
+ */
+export function subscribeToRsvps(
+  callback: () => void
+): () => void {
+  const channel = supabase
+    .channel("rsvps-changes")
+    .on(
+      "postgres_changes",
+      { event: "*", schema: "public", table: "rsvps" },
+      () => {
+        callback();
+      }
+    )
+    .subscribe();
+
+  return () => {
+    supabase.removeChannel(channel);
+  };
 }

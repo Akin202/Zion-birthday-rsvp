@@ -1,17 +1,35 @@
 import React, { useState } from "react";
 import { useRouter } from "../../lib/router";
 import { eventConfig } from "../../config/event.config";
-import { Lock, Mail, ShieldCheck, ArrowLeft } from "lucide-react";
+import { Lock, Mail, ShieldCheck, ArrowLeft, Loader2 } from "lucide-react";
+
+// Hardcoded admin credentials
+const ADMIN_EMAIL = "saidatawolowo@gmail.com";
+const ADMIN_PASSWORD = "Zions7th";
 
 export const LoginPage: React.FC = () => {
   const { navigate } = useRouter();
-  const [email, setEmail] = useState("admin@hero-hq.com");
-  const [password, setPassword] = useState("••••••••");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO(claude-code): wire to Supabase Auth
-    navigate("/admin");
+    setError(null);
+    setLoading(true);
+
+    // Simulate a brief delay for UX
+    await new Promise((resolve) => setTimeout(resolve, 400));
+
+    if (email === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
+      // Store auth flag in sessionStorage so it persists across page navigations
+      sessionStorage.setItem("admin_authenticated", "true");
+      navigate("/admin");
+    } else {
+      setError("Invalid email or password. Please try again.");
+    }
+    setLoading(false);
   };
 
   return (
@@ -38,11 +56,17 @@ export const LoginPage: React.FC = () => {
               Admin Console Sign In
             </h1>
             <p className="text-xs text-slate-500">
-              Authorized event staff & host portal for {eventConfig.celebrant.name}'s 7th Birthday
+              Authorized event staff &amp; host portal for {eventConfig.celebrant.name}'s 7th Birthday
             </p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
+            {error && (
+              <div className="bg-red-50 border border-red-200 text-red-700 text-xs font-medium rounded-lg px-4 py-3">
+                {error}
+              </div>
+            )}
+
             <div className="space-y-1.5">
               <label
                 htmlFor="adminEmail"
@@ -85,15 +109,23 @@ export const LoginPage: React.FC = () => {
 
             <button
               type="submit"
-              className="w-full bg-rose-600 hover:bg-rose-700 text-white font-bold py-3 px-4 rounded-lg text-sm transition-colors shadow-sm mt-2"
+              disabled={loading}
+              className="w-full bg-rose-600 hover:bg-rose-700 disabled:bg-rose-400 text-white font-bold py-3 px-4 rounded-lg text-sm transition-colors shadow-sm mt-2 flex items-center justify-center gap-2"
             >
-              Sign In to Admin Dashboard
+              {loading ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Signing In...
+                </>
+              ) : (
+                "Sign In to Admin Dashboard"
+              )}
             </button>
           </form>
 
           <div className="pt-4 border-t border-slate-100 text-center">
             <p className="text-[11px] text-slate-400">
-              Note: Front-end demo authentication enabled for testing.
+              Access restricted to authorized event staff only.
             </p>
           </div>
         </div>
@@ -101,3 +133,4 @@ export const LoginPage: React.FC = () => {
     </div>
   );
 };
+

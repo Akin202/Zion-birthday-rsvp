@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { LazyMotion, domAnimation, m, AnimatePresence } from "motion/react";
 import { eventConfig } from "../../config/event.config";
 import { RsvpFormValues, RsvpRecord, SubmissionState, calculateHeadcount } from "../../types/rsvp";
+import { submitRsvp } from "../../lib/data-access";
 import { RsvpForm } from "./RsvpForm";
 import { SpeechBubble } from "../ui/SpeechBubble";
 import { ComicPanel } from "../ui/ComicPanel";
@@ -79,29 +80,23 @@ export const RsvpSection: React.FC = () => {
   };
 
   // Handle Form Submit
-  const handleFormSubmit = (values: RsvpFormValues) => {
+  const handleFormSubmit = async (values: RsvpFormValues) => {
     setSubmissionState({ status: "submitting" });
 
-    setTimeout(() => {
-      const mockRecord: RsvpRecord = {
-        id: `rsvp-${Date.now()}`,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        totalHeadcount: calculateHeadcount(values),
-        checkedIn: false,
-        checkedInAt: null,
-        actualHeadcount: null,
-        ...values,
-      };
+    try {
+      const result = await submitRsvp(values);
+      setSubmissionState(result);
 
-      setSubmissionState({
-        status: "success",
-        record: mockRecord,
-      });
-
-      // Scroll to top of RSVP section so user clearly sees success message
+      // Scroll to top of RSVP section so user clearly sees the result
       setTimeout(scrollToRsvpSection, 50);
-    }, 900);
+    } catch (err) {
+      console.error("RSVP submission failed:", err);
+      setSubmissionState({
+        status: "error",
+        message: "Something went wrong. Please try again.",
+      });
+      setTimeout(scrollToRsvpSection, 50);
+    }
   };
 
   const firstName = enteredName ? enteredName.split(" ")[0] : "Hero";
