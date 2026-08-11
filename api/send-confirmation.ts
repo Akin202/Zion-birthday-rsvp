@@ -10,7 +10,24 @@
 //                        deliver to the Resend account owner's own inbox)
 //   HOST_NOTIFY_EMAIL  — if set, the host receives a copy of every RSVP
 
-import { eventConfig } from "../config/event.config";
+// NOTE: values inlined from config/event.config.ts — this function must not
+// import files outside api/ (Vercel deploys it without them, and the ESM
+// import then crashes at runtime with ERR_MODULE_NOT_FOUND). Keep in sync
+// with config/event.config.ts.
+const celebrant = { name: "Zion", age: 7 };
+const host = { contactName: "Saidat", whatsappNumber: "2348184014971" };
+const event = {
+  title: "Zion's 7th Birthday Spider-Verse Celebration",
+  dateDisplay: "Saturday, October 17th, 2026",
+  timeDisplay: "12:00 PM - 7:00 PM",
+  venueAddress: "The Amore Gardens, 1 Amore Street, Freedom Way, Lekki Phase 1, Lagos",
+  googleMapsUrl:
+    "https://www.google.com/maps/search/?api=1&query=" +
+    encodeURIComponent("The Amore Gardens, 1 Amore Street, Freedom Way, Lekki Phase 1, Lagos"),
+  dressCode: "Suit up in your favourite Spider-Man suit or Superhero costume!",
+  rsvpDeadline: "2026-09-30T23:59:59+01:00",
+  rsvpDeadlineDisplay: "September 30th, 2026",
+};
 
 interface ChildEntry {
   age?: number;
@@ -49,7 +66,6 @@ function headcount(p: RsvpPayload): number {
   return 1 + (p.hasPlusOne ? 1 : 0) + children + nannies;
 }
 
-const { event, celebrant, host } = eventConfig;
 const whatsappUrl = `https://wa.me/${host.whatsappNumber}`;
 
 function detailRow(label: string, value: string): string {
