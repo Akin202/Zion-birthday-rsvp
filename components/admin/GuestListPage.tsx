@@ -117,7 +117,6 @@ export const GuestListPage: React.FC = () => {
     if (!editingGuest) return;
 
     setSaving(true);
-    // TODO(claude-code): persist edits to Supabase
     await updateRsvp(editingGuest.id, editingGuest);
 
     const refreshed = await getAllRsvps();
