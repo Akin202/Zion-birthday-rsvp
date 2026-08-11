@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from "react";
-import { getRsvpStats } from "../../lib/data-access";
+import React, { useEffect, useState, useCallback } from "react";
+import { getRsvpStats, subscribeToRsvps } from "../../lib/data-access";
 import { RsvpStats } from "../../types/rsvp";
 import { eventConfig } from "../../config/event.config";
 import {
@@ -38,16 +38,28 @@ export const OverviewDashboard: React.FC = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // TODO(claude-code): subscribe to Supabase realtime so these figures live-update
     let isMounted = true;
-    getRsvpStats().then((data) => {
-      if (isMounted) {
-        setStats(data);
-        setLoading(false);
-      }
+
+    const fetchStats = () => {
+      getRsvpStats().then((data) => {
+        if (isMounted) {
+          setStats(data);
+          setLoading(false);
+        }
+      });
+    };
+
+    // Initial fetch
+    fetchStats();
+
+    // Subscribe to realtime changes so dashboard auto-updates
+    const unsubscribe = subscribeToRsvps(() => {
+      fetchStats();
     });
+
     return () => {
       isMounted = false;
+      unsubscribe();
     };
   }, []);
 

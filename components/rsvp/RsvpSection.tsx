@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { LazyMotion, domAnimation, m, AnimatePresence } from "motion/react";
 import { eventConfig } from "../../config/event.config";
 import { RsvpFormValues, RsvpRecord, SubmissionState, calculateHeadcount } from "../../types/rsvp";
+import { submitRsvp } from "../../lib/data-access";
 import { RsvpForm } from "./RsvpForm";
 import { SpeechBubble } from "../ui/SpeechBubble";
 import { ComicPanel } from "../ui/ComicPanel";
@@ -71,48 +72,21 @@ export const RsvpSection: React.FC = () => {
     setTimeout(scrollToRsvpSection, 50);
   };
 
-  // Handle Form Submit — sends the RSVP to the confirmation-email endpoint
+  // Handle Form Submit
   const handleFormSubmit = async (values: RsvpFormValues) => {
     setSubmissionState({ status: "submitting" });
 
-    const record: RsvpRecord = {
-      id: `rsvp-${Date.now()}`,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      totalHeadcount: calculateHeadcount(values),
-      checkedIn: false,
-      checkedInAt: null,
-      actualHeadcount: null,
-      ...values,
-    };
-
     try {
-      const res = await fetch("/api/send-confirmation", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(values),
-      });
+      const result = await submitRsvp(values);
+      setSubmissionState(result);
 
-      if (!res.ok) {
-        throw new Error(`Confirmation service responded with status ${res.status}`);
-      }
-
-      setSubmissionState({ status: "success", record });
+      // Scroll to top of RSVP section so user clearly sees the result
       setTimeout(scrollToRsvpSection, 50);
     } catch (err) {
-      // The /api routes only exist on Vercel — keep plain `vite dev` usable.
-      if (process.env.NODE_ENV === "development") {
-        console.warn("send-confirmation unavailable in dev, showing success anyway:", err);
-        setSubmissionState({ status: "success", record });
-        setTimeout(scrollToRsvpSection, 50);
-        return;
-      }
-
+      console.error("RSVP submission failed:", err);
       setSubmissionState({
         status: "error",
-        message:
-          "We couldn't send your RSVP right now. Please try again in a moment, or send your details straight to " +
-          `${eventConfig.host.contactName} on WhatsApp below.`,
+        message: "Something went wrong. Please try again.",
       });
       setTimeout(scrollToRsvpSection, 50);
     }
