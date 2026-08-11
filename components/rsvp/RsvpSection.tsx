@@ -10,7 +10,6 @@ import { BurstBadge } from "../ui/BurstBadge";
 import { ConfettiBurst } from "../ui/ConfettiBurst";
 import { SpiderMaskIcon } from "../ui/SpiderMaskIcon";
 import { SpiderEmblem } from "../ui/SpiderEmblem";
-import { SpiderSenseAlert } from "../ui/SpiderSenseAlert";
 import { generateGoogleCalendarUrl, generateWhatsAppShareUrl } from "../../lib/calendar";
 import { useReducedMotion } from "../../hooks/useReducedMotion";
 import {
@@ -25,8 +24,6 @@ import {
   UserCheck,
   RefreshCw,
   Clock,
-  Settings2,
-  Zap,
 } from "lucide-react";
 
 export const RsvpSection: React.FC = () => {
@@ -51,12 +48,8 @@ export const RsvpSection: React.FC = () => {
   // 2. Submission State
   const [submissionState, setSubmissionState] = useState<SubmissionState>({ status: "idle" });
 
-  // 3. Dev State Switcher Override (Visible in dev/preview for instant testing)
-  const [devStateOverride, setDevStateOverride] = useState<string | null>(null);
-
   // Check deadline
   const isDeadlinePassed = Date.now() > new Date(eventConfig.event.rsvpDeadline).getTime();
-  const effectiveDeadlineState = devStateOverride === "deadline" || (isDeadlinePassed && !devStateOverride);
 
   // Name gate submit validation: trimmed, min 3 chars, at least 2 words
   const handleNameGateSubmit = (e: React.FormEvent) => {
@@ -78,73 +71,61 @@ export const RsvpSection: React.FC = () => {
     setTimeout(scrollToRsvpSection, 50);
   };
 
-  // Handle Form Submit
-  const handleFormSubmit = (values: RsvpFormValues) => {
+  // Handle Form Submit — sends the RSVP to the confirmation-email endpoint
+  const handleFormSubmit = async (values: RsvpFormValues) => {
     setSubmissionState({ status: "submitting" });
 
-    setTimeout(() => {
-      const mockRecord: RsvpRecord = {
-        id: `rsvp-${Date.now()}`,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        totalHeadcount: calculateHeadcount(values),
-        checkedIn: false,
-        checkedInAt: null,
-        actualHeadcount: null,
-        ...values,
-      };
+    const record: RsvpRecord = {
+      id: `rsvp-${Date.now()}`,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      totalHeadcount: calculateHeadcount(values),
+      checkedIn: false,
+      checkedInAt: null,
+      actualHeadcount: null,
+      ...values,
+    };
 
-      setSubmissionState({
-        status: "success",
-        record: mockRecord,
+    try {
+      const res = await fetch("/api/send-confirmation", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(values),
       });
 
-      // Scroll to top of RSVP section so user clearly sees success message
+      if (!res.ok) {
+        throw new Error(`Confirmation service responded with status ${res.status}`);
+      }
+
+      setSubmissionState({ status: "success", record });
       setTimeout(scrollToRsvpSection, 50);
-    }, 900);
+    } catch (err) {
+      // The /api routes only exist on Vercel — keep plain `vite dev` usable.
+      if (process.env.NODE_ENV === "development") {
+        console.warn("send-confirmation unavailable in dev, showing success anyway:", err);
+        setSubmissionState({ status: "success", record });
+        setTimeout(scrollToRsvpSection, 50);
+        return;
+      }
+
+      setSubmissionState({
+        status: "error",
+        message:
+          "We couldn't send your RSVP right now. Please try again in a moment, or send your details straight to " +
+          `${eventConfig.host.contactName} on WhatsApp below.`,
+      });
+      setTimeout(scrollToRsvpSection, 50);
+    }
   };
 
   const firstName = enteredName ? enteredName.split(" ")[0] : "Hero";
 
-  // Effective status considering dev override
-  const activeStatus = devStateOverride
-    ? devStateOverride
-    : submissionState.status;
+  const activeStatus = submissionState.status;
 
-  // Mock sample record for dev state previews
-  const sampleSuccessRecord: RsvpRecord = {
-    id: "rsvp-mock-123",
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-    totalHeadcount: 4,
-    checkedIn: false,
-    checkedInAt: null,
-    actualHeadcount: null,
-    guestFullName: enteredName || "Adebayo Ogunlesi",
-    email: "adebayo@example.com",
-    phone: "+2348012345678",
-    isAttending: true,
-    hasPlusOne: true,
-    plusOneName: "Funke Ogunlesi",
-    children: [
-      { id: "c1", age: 7, gender: "male" },
-      { id: "c2", age: 5, gender: "female" },
-    ],
-    hasNanny: false,
-    nannyCount: 0,
-    dietaryNotes: "No nuts, halal only",
-    messageToCelebrant: "Happy 7th Birthday Zion! Ready to web-sling and party with you!",
-  };
+  const activeRecord = submissionState.status === "success" ? submissionState.record : null;
 
-  const activeRecord =
-    submissionState.status === "success"
-      ? submissionState.record
-      : sampleSuccessRecord;
-
-  // Helper Google Maps Directions Link
-  const directionsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-    `${eventConfig.event.venueName}, ${eventConfig.event.venueAddress}`
-  )}`;
+  // Google Maps Directions Link (points at the exact venue pin)
+  const directionsUrl = eventConfig.event.googleMapsUrl;
 
   return (
     <LazyMotion features={domAnimation}>
@@ -153,28 +134,11 @@ export const RsvpSection: React.FC = () => {
         className="py-16 sm:py-24 px-4 sm:px-8 bg-[#FDF6E3] bg-halftone-red border-b-[5px] border-[#111111] scroll-mt-6 relative"
       >
         <div className="max-w-4xl mx-auto flex flex-col items-center relative z-10">
-          {/* Main Heading in SpeechBubble with Spider-Sense alert */}
-          <div className="w-full max-w-2xl mb-10 text-center">
-            <SpiderSenseAlert>
-              <SpeechBubble tailPosition="bottom-center" bg="bg-[#FFD700]" className="-rotate-1">
-                <div className="flex items-center justify-center gap-2 mb-1">
-                  <SpiderMaskIcon size={28} />
-                  <h2 className="font-display text-4xl sm:text-6xl uppercase tracking-wider text-[#111111] drop-shadow-[2px_2px_0px_#FFFFFF]">
-                    RESERVE YOUR SPIDER-SUIT!
-                  </h2>
-                </div>
-                <p className="font-body text-base sm:text-xl font-bold text-[#111111] mt-2">
-                  Please RSVP by {eventConfig.event.rsvpDeadlineDisplay} so we can prepare your Spider-HQ gear!
-                </p>
-              </SpeechBubble>
-            </SpiderSenseAlert>
-          </div>
-
           {/* MANDATORY CONTRACT PLACEHOLDER DIV FOR LANDING PAGE ANCHOR */}
           <div className="w-full max-w-3xl mb-4" />
 
           {/* DEADLINE EXPIRED STATE */}
-          {effectiveDeadlineState ? (
+          {isDeadlinePassed ? (
             <ComicPanel rotate={-1} bg="bg-white" className="w-full max-w-2xl p-8 text-center space-y-6">
               <div className="w-16 h-16 bg-[#E62429] text-white border-[3px] border-[#111111] flex items-center justify-center font-display text-3xl mx-auto shadow-[4px_4px_0px_#111111]">
                 <Clock className="w-10 h-10 text-[#FFD700]" />
@@ -270,7 +234,7 @@ export const RsvpSection: React.FC = () => {
                 )}
 
                 {/* 2. FORM VIEW (IDLE OR SUBMITTING) */}
-                {(isNameSubmitted || devStateOverride === "submitting" || devStateOverride === "idle") &&
+                {isNameSubmitted &&
                   (activeStatus === "idle" || activeStatus === "submitting") && (
                     <m.div
                       key="form-view"
@@ -312,18 +276,14 @@ export const RsvpSection: React.FC = () => {
                         initialValues={{
                           guestFullName: enteredName || "Adebayo Ogunlesi",
                         }}
-                        submissionState={
-                          devStateOverride === "submitting"
-                            ? { status: "submitting" }
-                            : submissionState
-                        }
+                        submissionState={submissionState}
                         onSubmit={handleFormSubmit}
                       />
                     </m.div>
                   )}
 
                 {/* 3. SUCCESS STATE VIEW */}
-                {activeStatus === "success" && (
+                {activeStatus === "success" && activeRecord && (
                   <m.div
                     key="success-view"
                     initial={shouldReduceMotion ? {} : { opacity: 0, scale: 0.95 }}
@@ -352,7 +312,7 @@ export const RsvpSection: React.FC = () => {
 
                         <div className="inline-flex items-center gap-2 bg-[#FFFDF5] border-2 border-[#111111] px-4 py-1.5 font-body text-xs font-bold text-slate-600">
                           <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                          <span>A confirmation dispatch has been logged.</span>
+                          <span>A confirmation email is on its way to your inbox.</span>
                         </div>
                       </div>
 
@@ -612,82 +572,6 @@ export const RsvpSection: React.FC = () => {
             </div>
           )}
         </div>
-
-        {/* TEMPORARY DEV-ONLY STATE SWITCHER FOR TESTING */}
-        {process.env.NODE_ENV === "development" && (
-          <div className="fixed bottom-4 left-4 z-50 bg-[#111111] text-white border-2 border-[#FFD700] p-3 shadow-[4px_4px_0px_#E62429] font-body text-xs rounded-none max-w-xs">
-            <div className="flex items-center justify-between gap-2 border-b border-white/20 pb-1 mb-2 font-display text-sm text-[#FFD700]">
-              <span className="flex items-center gap-1">
-                <Settings2 className="w-4 h-4" />
-                <span>DEV STATE SWITCHER</span>
-              </span>
-              {devStateOverride && (
-                <button
-                  onClick={() => setDevStateOverride(null)}
-                  className="text-[10px] text-red-400 underline"
-                >
-                  Clear
-                </button>
-              )}
-            </div>
-            <div className="grid grid-cols-2 gap-1.5 font-display text-[11px]">
-              <button
-                onClick={() => {
-                  setDevStateOverride("idle");
-                  setIsNameSubmitted(true);
-                }}
-                className={`p-1 border text-center uppercase ${
-                  activeStatus === "idle" ? "bg-[#114593] text-white border-white" : "bg-slate-800 text-slate-300 border-slate-600"
-                }`}
-              >
-                1. Idle Form
-              </button>
-              <button
-                onClick={() => {
-                  setDevStateOverride("submitting");
-                  setIsNameSubmitted(true);
-                }}
-                className={`p-1 border text-center uppercase ${
-                  activeStatus === "submitting" ? "bg-[#FFD700] text-[#111111] border-white" : "bg-slate-800 text-slate-300 border-slate-600"
-                }`}
-              >
-                2. Submitting
-              </button>
-              <button
-                onClick={() => setDevStateOverride("success")}
-                className={`p-1 border text-center uppercase ${
-                  activeStatus === "success" ? "bg-emerald-600 text-white border-white" : "bg-slate-800 text-slate-300 border-slate-600"
-                }`}
-              >
-                3. Success
-              </button>
-              <button
-                onClick={() => setDevStateOverride("duplicate")}
-                className={`p-1 border text-center uppercase ${
-                  activeStatus === "duplicate" ? "bg-purple-600 text-white border-white" : "bg-slate-800 text-slate-300 border-slate-600"
-                }`}
-              >
-                4. Duplicate
-              </button>
-              <button
-                onClick={() => setDevStateOverride("error")}
-                className={`p-1 border text-center uppercase ${
-                  activeStatus === "error" ? "bg-[#E62429] text-white border-white" : "bg-slate-800 text-slate-300 border-slate-600"
-                }`}
-              >
-                5. Error
-              </button>
-              <button
-                onClick={() => setDevStateOverride("deadline")}
-                className={`p-1 border text-center uppercase ${
-                  effectiveDeadlineState ? "bg-amber-600 text-white border-white" : "bg-slate-800 text-slate-300 border-slate-600"
-                }`}
-              >
-                6. Closed Deadline
-              </button>
-            </div>
-          </div>
-        )}
       </section>
     </LazyMotion>
   );

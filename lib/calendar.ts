@@ -1,10 +1,10 @@
 import { eventConfig } from "../config/event.config";
 
 export function generateGoogleCalendarUrl(): string {
-  // Event start: 2026-10-18 14:00 WAT (+1) => 13:00 UTC
-  // Event end:   2026-10-18 19:00 WAT (+1) => 18:00 UTC
-  const startDate = "20261018T130000Z";
-  const endDate = "20261018T180000Z";
+  // Event start: 2026-10-17 12:00 WAT (+1) => 11:00 UTC
+  // Event end:   2026-10-17 19:00 WAT (+1) => 18:00 UTC
+  const startDate = "20261017T110000Z";
+  const endDate = "20261017T180000Z";
 
   const title = encodeURIComponent(eventConfig.event.title);
   const details = encodeURIComponent(

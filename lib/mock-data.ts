@@ -63,7 +63,7 @@ export const MOCK_RSVPS: RsvpRecord[] = [
     "Peanut allergy for older child",
     "Happy 7th Birthday Zion! Excited to celebrate with you!",
     true,
-    "2026-10-18T14:15:00+01:00",
+    "2026-10-17T14:15:00+01:00",
     5
   ),
   createMockRecord(
@@ -84,7 +84,7 @@ export const MOCK_RSVPS: RsvpRecord[] = [
     "No pork / Halal only please",
     "Zion, get ready for superhero games! Happy Birthday buddy!",
     true,
-    "2026-10-18T14:30:00+01:00",
+    "2026-10-17T14:30:00+01:00",
     5
   ),
   createMockRecord(
@@ -121,7 +121,7 @@ export const MOCK_RSVPS: RsvpRecord[] = [
     "",
     "Happy 7th Birthday Champion Zion!",
     true,
-    "2026-10-18T14:05:00+01:00",
+    "2026-10-17T14:05:00+01:00",
     3
   ),
   createMockRecord(
