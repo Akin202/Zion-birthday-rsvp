@@ -464,7 +464,7 @@ export const RsvpSection: React.FC = () => {
                           LOOKS LIKE YOU'VE ALREADY RSVP'D!
                         </h3>
                         <p className="font-body text-base font-bold text-[#111111] max-w-md mx-auto">
-                          We've sent a link to your email to update your response. If you didn't receive it or want to update now, contact our host directly on WhatsApp!
+                          An RSVP already exists for this email address. To update or change your response, contact our host directly on WhatsApp!
                         </p>
                       </div>
 
