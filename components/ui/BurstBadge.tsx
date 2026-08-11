@@ -2,7 +2,7 @@ import React from "react";
 import clsx from "clsx";
 
 export interface BurstBadgeProps {
-  text: string;
+  text: React.ReactNode;
   color?: string; // hex or color string
   textColor?: string;
   className?: string;

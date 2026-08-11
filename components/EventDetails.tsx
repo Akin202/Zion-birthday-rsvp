@@ -4,7 +4,7 @@ import { ComicPanel } from "./ui/ComicPanel";
 import { ComicButton } from "./ui/ComicButton";
 import { SpiderMaskIcon } from "./ui/SpiderMaskIcon";
 import { SpiderEmblem } from "./ui/SpiderEmblem";
-import { Calendar, MapPin, ShieldAlert, Navigation } from "lucide-react";
+import { Calendar, MapPin, ShieldAlert, Navigation, Shirt } from "lucide-react";
 
 export const EventDetails: React.FC = () => {
   return (
@@ -24,8 +24,8 @@ export const EventDetails: React.FC = () => {
           </p>
         </div>
 
-        {/* 3 Comic Panels Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-stretch">
+        {/* 4 Comic Panels Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-stretch">
           {/* PANEL 1: WHEN */}
           <ComicPanel rotate={-2} bg="bg-white" className="flex flex-col justify-between hover:scale-[1.02] transition-transform duration-200">
             <div>
@@ -67,9 +67,14 @@ export const EventDetails: React.FC = () => {
                 <p className="text-xl font-display text-[#111111] flex items-center gap-1.5">
                   <span>🕷️ {eventConfig.event.venueName}</span>
                 </p>
-                <p className="text-slate-700">
+                <a
+                  href={eventConfig.event.googleMapsUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block text-slate-700 underline decoration-dashed underline-offset-4 hover:text-[#114593] transition-colors"
+                >
                   {eventConfig.event.venueAddress}
-                </p>
+                </a>
               </div>
             </div>
 
@@ -110,6 +115,30 @@ export const EventDetails: React.FC = () => {
             </div>
             <div className="mt-6 pt-3 border-t-2 border-[#111111] text-xs font-display uppercase tracking-widest text-[#111111]">
               PANEL 03 • SUIT UP OUTFIT
+            </div>
+          </ComicPanel>
+
+          {/* PANEL 4: BACKUP OUTFIT */}
+          <ComicPanel rotate={1} bg="bg-[#FFFDF5]" className="flex flex-col justify-between border-[#E62429] hover:scale-[1.02] transition-transform duration-200">
+            <div>
+              <div className="w-14 h-14 bg-[#E62429] text-white border-[3px] border-[#111111] shadow-[3px_3px_0px_#111111] flex items-center justify-center mb-4 -rotate-2">
+                <Shirt className="w-8 h-8 stroke-[2.5]" />
+              </div>
+              <h3 className="font-display text-3xl uppercase text-[#E62429] mb-3 flex items-center gap-2">
+                <span>BACKUP OUTFIT</span>
+                <SpiderEmblem size={20} color="#E62429" />
+              </h3>
+              <div className="font-body text-[#111111] font-bold text-lg bg-[#E62429]/10 border-2 border-[#111111] p-4 rounded-none -rotate-1 mb-4">
+                "Even Spider-Man needs a wardrobe change sometimes!"
+              </div>
+              <p className="font-body text-sm text-slate-700 font-medium">
+                Spider-suits can get warm after all that web-slinging! Parents, please pack a spare
+                change of clothes for your little hero — if the costume gets too hot or anything comes
+                up, they can switch into something comfy and keep the party going.
+              </p>
+            </div>
+            <div className="mt-6 pt-3 border-t-2 border-[#111111] text-xs font-display uppercase tracking-widest text-[#E62429]">
+              PANEL 04 • COSTUME CHANGE
             </div>
           </ComicPanel>
         </div>

@@ -59,7 +59,9 @@ export const Hero: React.FC = () => {
 
           <div className="font-display text-xs sm:text-sm uppercase text-[#FFD700] bg-[#111111]/90 px-3 py-1.5 border border-[#FFD700]/50 rounded-sm flex items-center gap-1.5 shadow-[2px_2px_0px_#114593]">
             <Zap className="w-4 h-4 text-[#E62429] fill-[#E62429]" />
-            <span>ISSUE #7 • SPECIAL RELEASE</span>
+            <span>
+              ISSUE #<span className="font-body font-black">7</span> • SPECIAL RELEASE
+            </span>
           </div>
         </div>
 
@@ -88,7 +90,9 @@ export const Hero: React.FC = () => {
             transition={{ type: "spring", stiffness: 260, damping: 20, delay: 0.2 }}
             className="font-display text-4xl sm:text-7xl md:text-8xl uppercase tracking-wider text-white leading-[0.9] my-3 text-shadow-hero drop-shadow-[6px_6px_0px_#111111] flex flex-col items-center gap-1"
           >
-            <span className="block">Zion's 7th Birthday</span>
+            <span className="block">
+              Zion's <span className="font-body font-black">7</span>th Birthday
+            </span>
             <span className="block text-[#FFD700]">Spider-Verse</span>
             <span className="block">Celebration</span>
           </m.h1>
@@ -105,7 +109,12 @@ export const Hero: React.FC = () => {
             className="my-3"
           >
             <BurstBadge
-              text={`🕷️ ${eventConfig.celebrant.name} IS TURNING ${eventConfig.celebrant.age}! 🕷️`}
+              text={
+                <>
+                  🕷️ {eventConfig.celebrant.name} IS TURNING{" "}
+                  <span className="font-body font-black">{eventConfig.celebrant.age}</span>! 🕷️
+                </>
+              }
               color="#E62429"
               textColor="#FFFFFF"
               size="lg"
