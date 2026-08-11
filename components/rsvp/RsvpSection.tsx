@@ -80,6 +80,16 @@ export const RsvpSection: React.FC = () => {
       const result = await submitRsvp(values);
       setSubmissionState(result);
 
+      // Fire-and-forget: send the confirmation email once the RSVP is saved.
+      // A failed email must never turn a saved RSVP into a visible error.
+      if (result.status === "success") {
+        fetch("/api/send-confirmation", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(values),
+        }).catch((err) => console.error("send-confirmation failed:", err));
+      }
+
       // Scroll to top of RSVP section so user clearly sees the result
       setTimeout(scrollToRsvpSection, 50);
     } catch (err) {
