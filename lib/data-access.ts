@@ -263,6 +263,38 @@ export async function updateRsvp(
 }
 
 // ---------------------------------------------------------------------------
+// DELETE
+// ---------------------------------------------------------------------------
+
+/** Delete a single RSVP by its ID. */
+export async function deleteRsvp(id: string): Promise<void> {
+  const { error } = await supabase
+    .from("rsvps")
+    .delete()
+    .eq("id", id);
+
+  if (error) {
+    console.error("deleteRsvp error:", error);
+    throw new Error(error.message);
+  }
+}
+
+/** Delete multiple RSVPs by their IDs. */
+export async function deleteMultipleRsvps(ids: string[]): Promise<void> {
+  if (ids.length === 0) return;
+
+  const { error } = await supabase
+    .from("rsvps")
+    .delete()
+    .in("id", ids);
+
+  if (error) {
+    console.error("deleteMultipleRsvps error:", error);
+    throw new Error(error.message);
+  }
+}
+
+// ---------------------------------------------------------------------------
 // REALTIME
 // ---------------------------------------------------------------------------
 
