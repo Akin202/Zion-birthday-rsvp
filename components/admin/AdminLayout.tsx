@@ -1,6 +1,7 @@
 import React, { useEffect } from "react";
 import { useRouter } from "../../lib/router";
 import { eventConfig } from "../../config/event.config";
+import floralLogo from "../../assets/floralexperience.jpeg";
 import {
   LayoutDashboard,
   Users,
@@ -47,6 +48,13 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
         <div>
           {/* Brand & Event Title */}
           <div className="p-6 border-b border-slate-800">
+            <div className="mb-4 -mx-6 -mt-6">
+              <img
+                src={floralLogo}
+                alt="Floral Experience Events"
+                className="w-full object-cover"
+              />
+            </div>
             <div className="flex items-center gap-2.5 text-rose-500 font-bold text-xs uppercase tracking-wider mb-1">
               <ShieldCheck className="w-4 h-4 text-rose-500" />
               <span>Admin Control Center</span>
@@ -71,13 +79,12 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
                 <button
                   key={item.route}
                   onClick={() => navigate(item.route)}
-                  className={`w-full flex items-center justify-between px-3.5 py-3 rounded-lg text-sm font-semibold transition-colors ${
-                    isActive
-                      ? "bg-rose-600 text-white shadow-sm"
-                      : item.highlight
+                  className={`w-full flex items-center justify-between px-3.5 py-3 rounded-lg text-sm font-semibold transition-colors ${isActive
+                    ? "bg-rose-600 text-white shadow-sm"
+                    : item.highlight
                       ? "bg-slate-800 text-amber-300 hover:bg-slate-700 hover:text-amber-200"
                       : "text-slate-300 hover:bg-slate-800 hover:text-white"
-                  }`}
+                    }`}
                 >
                   <div className="flex items-center gap-3">
                     <Icon className="w-5 h-5 stroke-[2]" />
@@ -118,6 +125,11 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
         <header className="bg-white border-b border-slate-200 px-4 sm:px-8 py-4 flex items-center justify-between sticky top-0 z-30 shadow-xs">
           <div className="flex items-center gap-3">
             <div className="md:hidden flex items-center gap-2">
+              <img
+                src={floralLogo}
+                alt="Floral Experience Events"
+                className="h-8 w-auto object-contain"
+              />
               <span className="bg-slate-900 text-white font-bold text-xs px-2.5 py-1 rounded">
                 ADMIN
               </span>
@@ -127,10 +139,10 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
                 {path === "/admin/guests"
                   ? "Guest List & RSVP Records"
                   : path === "/admin/checkin"
-                  ? "Door Check-in Station"
-                  : path === "/admin/export"
-                  ? "Data Export & Reports"
-                  : "Event Overview & Analytics"}
+                    ? "Door Check-in Station"
+                    : path === "/admin/export"
+                      ? "Data Export & Reports"
+                      : "Event Overview & Analytics"}
               </h2>
               <p className="text-xs text-slate-500 font-medium hidden sm:block">
                 Door Check-in & Event Management Console
@@ -179,13 +191,12 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
             <button
               key={item.route}
               onClick={() => navigate(item.route)}
-              className={`flex flex-col items-center gap-1 py-1 px-3 rounded-md text-[11px] font-medium transition-colors ${
-                isActive
-                  ? "text-rose-500 font-bold"
-                  : item.highlight
+              className={`flex flex-col items-center gap-1 py-1 px-3 rounded-md text-[11px] font-medium transition-colors ${isActive
+                ? "text-rose-500 font-bold"
+                : item.highlight
                   ? "text-amber-300"
                   : "hover:text-white"
-              }`}
+                }`}
             >
               <Icon className="w-5 h-5 stroke-[2]" />
               <span>{item.label.split(" ")[0]}</span>

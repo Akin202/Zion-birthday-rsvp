@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { getAllRsvps, updateRsvp } from "../../lib/data-access";
+import { getAllRsvps, updateRsvp, deleteRsvp, deleteMultipleRsvps } from "../../lib/data-access";
 import { RsvpRecord, ChildEntry } from "../../types/rsvp";
 import {
   Search,
@@ -13,6 +13,7 @@ import {
   Plus,
   Trash2,
   UserCheck,
+  AlertTriangle,
 } from "lucide-react";
 
 type FilterChip = "All" | "Attending" | "Not Attending" | "Checked In" | "Not Checked In";
@@ -38,6 +39,11 @@ export const GuestListPage: React.FC = () => {
   // Edit Modal State
   const [editingGuest, setEditingGuest] = useState<RsvpRecord | null>(null);
   const [saving, setSaving] = useState(false);
+
+  // Delete State
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [deleteTarget, setDeleteTarget] = useState<{ mode: "single"; guest: RsvpRecord } | { mode: "bulk"; ids: string[] } | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   // Pagination State
   const [currentPage, setCurrentPage] = useState(1);
@@ -125,6 +131,46 @@ export const GuestListPage: React.FC = () => {
     setEditingGuest(null);
   };
 
+  // --- Delete handlers ---
+  const handleConfirmDelete = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    try {
+      if (deleteTarget.mode === "single") {
+        await deleteRsvp(deleteTarget.guest.id);
+      } else {
+        await deleteMultipleRsvps(deleteTarget.ids);
+      }
+      const refreshed = await getAllRsvps();
+      setRsvps(refreshed);
+      setSelectedIds(new Set());
+    } catch (err) {
+      console.error("Delete failed:", err);
+    } finally {
+      setDeleting(false);
+      setDeleteTarget(null);
+    }
+  };
+
+  const toggleSelectRow = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedIds.size === paginatedRows.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(paginatedRows.map((r) => r.id)));
+    }
+  };
+
+  const allOnPageSelected = paginatedRows.length > 0 && selectedIds.size === paginatedRows.length;
+
   if (loading) {
     return (
       <div className="min-h-[400px] flex flex-col items-center justify-center space-y-3">
@@ -179,12 +225,45 @@ export const GuestListPage: React.FC = () => {
         </div>
       </div>
 
+      {/* BULK ACTION BAR */}
+      {selectedIds.size > 0 && (
+        <div className="bg-slate-900 text-white px-4 py-3 rounded-xl flex items-center justify-between shadow-lg animate-[slideUp_0.2s_ease-out]">
+          <span className="text-sm font-bold">
+            {selectedIds.size} guest{selectedIds.size > 1 ? "s" : ""} selected
+          </span>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setSelectedIds(new Set())}
+              className="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-white text-xs font-bold rounded transition-colors"
+            >
+              Clear Selection
+            </button>
+            <button
+              onClick={() => setDeleteTarget({ mode: "bulk", ids: Array.from(selectedIds) })}
+              className="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded transition-colors flex items-center gap-1.5"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              Delete Selected
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* DESKTOP TABLE VIEW */}
       <div className="hidden md:block bg-white rounded-xl border border-slate-200 shadow-2xs overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
             <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 font-bold uppercase tracking-wider">
               <tr>
+                <th className="px-3 py-3 w-10">
+                  <input
+                    type="checkbox"
+                    checked={allOnPageSelected}
+                    onChange={toggleSelectAll}
+                    className="rounded border-slate-300 text-rose-600 cursor-pointer"
+                    title="Select all on this page"
+                  />
+                </th>
                 <th
                   onClick={() => handleSort("guestFullName")}
                   className="px-4 py-3 cursor-pointer hover:text-slate-900 transition-colors"
@@ -217,7 +296,7 @@ export const GuestListPage: React.FC = () => {
             <tbody className="divide-y divide-slate-100 text-slate-700 font-medium">
               {paginatedRows.length === 0 ? (
                 <tr>
-                  <td colSpan={9} className="px-4 py-12 text-center text-slate-400">
+                  <td colSpan={10} className="px-4 py-12 text-center text-slate-400">
                     No guest records matching your filter.
                   </td>
                 </tr>
@@ -232,8 +311,17 @@ export const GuestListPage: React.FC = () => {
                         onClick={() => setExpandedRowId(isExpanded ? null : row.id)}
                         className={`hover:bg-slate-50/80 cursor-pointer transition-colors ${
                           isExpanded ? "bg-slate-50" : ""
-                        }`}
+                        } ${selectedIds.has(row.id) ? "bg-rose-50/60" : ""}`}
                       >
+                        <td className="px-3 py-3.5">
+                          <input
+                            type="checkbox"
+                            checked={selectedIds.has(row.id)}
+                            onChange={() => toggleSelectRow(row.id)}
+                            onClick={(e) => e.stopPropagation()}
+                            className="rounded border-slate-300 text-rose-600 cursor-pointer"
+                          />
+                        </td>
                         <td className="px-4 py-3.5 font-bold text-slate-900">
                           <div className="flex items-center gap-2">
                             <span>{row.guestFullName}</span>
@@ -274,24 +362,36 @@ export const GuestListPage: React.FC = () => {
                         <td className="px-4 py-3.5 text-center font-extrabold text-slate-900 text-sm">
                           {row.totalHeadcount}
                         </td>
-                        <td className="px-4 py-3.5 text-right space-x-2">
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setEditingGuest({ ...row });
-                            }}
-                            className="p-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded transition-colors"
-                            title="Edit Guest Details"
-                          >
-                            <Edit2 className="w-3.5 h-3.5" />
-                          </button>
+                        <td className="px-4 py-3.5 text-right">
+                          <div className="flex items-center justify-end gap-1">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setEditingGuest({ ...row });
+                              }}
+                              className="p-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded transition-colors"
+                              title="Edit Guest Details"
+                            >
+                              <Edit2 className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setDeleteTarget({ mode: "single", guest: row });
+                              }}
+                              className="p-1.5 bg-red-50 hover:bg-red-100 text-red-600 hover:text-red-700 rounded transition-colors"
+                              title="Delete Guest"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
                         </td>
                       </tr>
 
                       {/* EXPANDED DETAILS ROW */}
                       {isExpanded && (
                         <tr className="bg-slate-50/90 border-t border-b border-slate-200/80">
-                          <td colSpan={9} className="p-4">
+                          <td colSpan={10} className="p-4">
                             <div className="bg-white rounded-lg p-4 border border-slate-200 space-y-3 text-xs">
                               <div className="font-bold text-slate-800 border-b border-slate-100 pb-2 flex items-center justify-between">
                                 <span>Expanded Details for {row.guestFullName}</span>
@@ -422,13 +522,22 @@ export const GuestListPage: React.FC = () => {
                   {expandedRowId === row.id ? "Hide Details" : "View Children & Notes"}
                 </button>
 
-                <button
-                  onClick={() => setEditingGuest({ ...row })}
-                  className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded font-bold text-[11px] flex items-center gap-1"
-                >
-                  <Edit2 className="w-3 h-3" />
-                  <span>Edit</span>
-                </button>
+                <div className="flex items-center gap-1.5">
+                  <button
+                    onClick={() => setEditingGuest({ ...row })}
+                    className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded font-bold text-[11px] flex items-center gap-1"
+                  >
+                    <Edit2 className="w-3 h-3" />
+                    <span>Edit</span>
+                  </button>
+                  <button
+                    onClick={() => setDeleteTarget({ mode: "single", guest: row })}
+                    className="px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 rounded font-bold text-[11px] flex items-center gap-1 transition-colors"
+                  >
+                    <Trash2 className="w-3 h-3" />
+                    <span>Delete</span>
+                  </button>
+                </div>
               </div>
 
               {expandedRowId === row.id && (
@@ -637,6 +746,56 @@ export const GuestListPage: React.FC = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* DELETE CONFIRMATION MODAL */}
+      {deleteTarget && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl shadow-2xl border border-slate-200 w-full max-w-md">
+            <div className="p-5 flex flex-col items-center text-center space-y-3">
+              <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center">
+                <AlertTriangle className="w-6 h-6 text-red-600" />
+              </div>
+              <h3 className="font-bold text-slate-900 text-base">
+                {deleteTarget.mode === "single"
+                  ? "Delete Guest Submission"
+                  : `Delete ${deleteTarget.ids.length} Submission${deleteTarget.ids.length > 1 ? "s" : ""}`}
+              </h3>
+              <p className="text-sm text-slate-500 leading-relaxed">
+                {deleteTarget.mode === "single" ? (
+                  <>
+                    Are you sure you want to permanently delete{" "}
+                    <span className="font-bold text-slate-700">{deleteTarget.guest.guestFullName}</span>'s
+                    RSVP submission? This action cannot be undone.
+                  </>
+                ) : (
+                  <>
+                    Are you sure you want to permanently delete{" "}
+                    <span className="font-bold text-slate-700">{deleteTarget.ids.length}</span>{" "}
+                    selected submission{deleteTarget.ids.length > 1 ? "s" : ""}? This action cannot be undone.
+                  </>
+                )}
+              </p>
+            </div>
+            <div className="px-5 pb-5 flex items-center justify-center gap-3">
+              <button
+                onClick={() => setDeleteTarget(null)}
+                disabled={deleting}
+                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-sm rounded transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleConfirmDelete}
+                disabled={deleting}
+                className="px-5 py-2 bg-red-600 hover:bg-red-700 text-white font-bold text-sm rounded flex items-center gap-2 transition-colors"
+              >
+                {deleting && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                <span>{deleting ? "Deleting..." : "Delete Permanently"}</span>
+              </button>
+            </div>
           </div>
         </div>
       )}
