@@ -1,7 +1,7 @@
 import React, { useEffect } from "react";
 import { useRouter } from "../../lib/router";
 import { eventConfig } from "../../config/event.config";
-import floralLogo from "../../assets/floralexperience.jpeg";
+import floralLogo from "../../assets/floralexperience.png";
 import {
   LayoutDashboard,
   Users,
