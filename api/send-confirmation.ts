@@ -24,7 +24,7 @@ const event = {
   googleMapsUrl:
     "https://www.google.com/maps/search/?api=1&query=" +
     encodeURIComponent("The Amore Gardens, 1 Amore Street, Freedom Way, Lekki Phase 1, Lagos"),
-  dressCode: "Suit up in your favourite Spider-Man suit or Superhero costume!",
+  dressCode: "Kids: Superhero Costumes | Adults: Colourful & Classy (Emerald Green & Royal Blue)",
   rsvpDeadline: "2026-09-30T23:59:59+01:00",
   rsvpDeadlineDisplay: "September 30th, 2026",
 };
@@ -75,7 +75,7 @@ function detailRow(label: string, value: string): string {
   </tr>`;
 }
 
-function buildGuestEmail(p: RsvpPayload): { subject: string; html: string } {
+function buildGuestEmail(p: RsvpPayload): { subject: string; html: string; text: string } {
   const firstName = esc((p.guestFullName || "Hero").trim().split(/\s+/)[0]);
   const total = headcount(p);
 
@@ -174,10 +174,36 @@ function buildGuestEmail(p: RsvpPayload): { subject: string; html: string } {
 </html>`;
 
   const subject = p.isAttending
-    ? `🕷️ You're confirmed for ${celebrant.name}'s ${celebrant.age}th Birthday — ${event.dateDisplay}`
+    ? `You're confirmed for ${celebrant.name}'s ${celebrant.age}th Birthday — ${event.dateDisplay}`
     : `We'll miss you at ${celebrant.name}'s ${celebrant.age}th Birthday`;
 
-  return { subject, html };
+  const firstNamePlain = (p.guestFullName || "Hero").trim().split(/\s+/)[0];
+  const text = p.isAttending
+    ? [
+        `Hi ${firstNamePlain},`,
+        ``,
+        `Your spot at ${celebrant.name}'s ${celebrant.age}th Birthday Spider-Verse Celebration is confirmed!`,
+        ``,
+        `Date: ${event.dateDisplay}`,
+        `Time: ${event.timeDisplay}`,
+        `Venue: ${event.venueAddress}`,
+        `Dress code: ${event.dressCode}`,
+        `Total heroes in your party: ${total}`,
+        ``,
+        `Tip: spider-suits can get warm — please pack a spare change of clothes for your little hero.`,
+        ``,
+        `Directions: ${event.googleMapsUrl}`,
+        `Questions or changes? Message ${host.contactName} on WhatsApp: ${whatsappUrl}`,
+      ].join("\n")
+    : [
+        `Hi ${firstNamePlain},`,
+        ``,
+        `Thank you for letting us know you can't make it to ${celebrant.name}'s ${celebrant.age}th Birthday Celebration. You'll be missed!`,
+        ``,
+        `If your plans change before ${event.rsvpDeadlineDisplay}, message ${host.contactName} on WhatsApp: ${whatsappUrl}`,
+      ].join("\n");
+
+  return { subject, html, text };
 }
 
 function buildHostEmail(p: RsvpPayload): { subject: string; html: string } {
@@ -209,7 +235,7 @@ function buildHostEmail(p: RsvpPayload): { subject: string; html: string } {
 
 async function sendViaResend(
   apiKey: string,
-  payload: { from: string; to: string[]; reply_to?: string; subject: string; html: string }
+  payload: { from: string; to: string[]; reply_to?: string; subject: string; html: string; text?: string }
 ): Promise<Response> {
   return fetch("https://api.resend.com/emails", {
     method: "POST",
@@ -253,6 +279,7 @@ export default async function handler(req: any, res: any) {
     ...(hostEmail ? { reply_to: hostEmail } : {}),
     subject: guestEmail.subject,
     html: guestEmail.html,
+    text: guestEmail.text,
   });
 
   if (!guestSend.ok) {
