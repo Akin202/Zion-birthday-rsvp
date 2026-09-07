@@ -24,7 +24,7 @@ const event = {
   googleMapsUrl:
     "https://www.google.com/maps/search/?api=1&query=" +
     encodeURIComponent("The Amore Gardens, 1 Amore Street, Freedom Way, Lekki Phase 1, Lagos"),
-  dressCode: "Suit up in your favourite Spider-Man suit or Superhero costume!",
+  dressCode: "Kids: Superhero Costumes | Adults: Colourful & Classy (Emerald Green & Royal Blue)",
   rsvpDeadline: "2026-09-30T23:59:59+01:00",
   rsvpDeadlineDisplay: "September 30th, 2026",
 };

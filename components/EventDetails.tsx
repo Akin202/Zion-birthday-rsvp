@@ -4,7 +4,7 @@ import { ComicPanel } from "./ui/ComicPanel";
 import { ComicButton } from "./ui/ComicButton";
 import { SpiderMaskIcon } from "./ui/SpiderMaskIcon";
 import { SpiderEmblem } from "./ui/SpiderEmblem";
-import { Calendar, MapPin, ShieldAlert, Navigation, Shirt } from "lucide-react";
+import { Calendar, MapPin, ShieldAlert, Navigation, Shirt, Sparkles, Crown } from "lucide-react";
 
 export const EventDetails: React.FC = () => {
   return (
@@ -20,11 +20,11 @@ export const EventDetails: React.FC = () => {
             SPIDER HQ MISSION DETAILS
           </h2>
           <p className="font-body text-lg sm:text-xl text-[#111111] font-bold mt-2">
-            Everything web-slingers need to know before reporting for duty!
+            Everything web-slingers & heroes need to know before reporting for duty!
           </p>
         </div>
 
-        {/* 4 Comic Panels Grid */}
+        {/* Comic Panels Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-stretch">
           {/* PANEL 1: WHEN */}
           <ComicPanel rotate={-2} bg="bg-white" className="flex flex-col justify-between hover:scale-[1.02] transition-transform duration-200">
@@ -96,49 +96,95 @@ export const EventDetails: React.FC = () => {
             </div>
           </ComicPanel>
 
-          {/* PANEL 3: DRESS CODE */}
+          {/* PANEL 3: KIDS DRESS CODE */}
           <ComicPanel rotate={-1} bg="bg-white" className="flex flex-col justify-between hover:scale-[1.02] transition-transform duration-200">
             <div>
               <div className="w-14 h-14 bg-[#FFD700] text-[#111111] border-[3px] border-[#111111] shadow-[3px_3px_0px_#111111] flex items-center justify-center mb-4 rotate-2">
                 <ShieldAlert className="w-8 h-8 stroke-[2.5]" />
               </div>
               <h3 className="font-display text-3xl uppercase text-[#111111] mb-3 flex items-center gap-2">
-                <span>HERO SUIT</span>
+                <span>KIDS DRESS CODE</span>
                 <SpiderEmblem size={20} color="#E62429" />
               </h3>
               <div className="font-body text-[#111111] font-bold text-lg bg-[#FFD700]/30 border-2 border-[#111111] p-4 rounded-none rotate-1 mb-4">
-                "{eventConfig.event.dressCode}"
+                "{eventConfig.event.kidsDressCode}"
               </div>
               <p className="font-body text-sm text-slate-700 font-medium">
                 Spider-Man suits, Spider-Gwen, Miles Morales, capes, masks, and superhero gear strongly encouraged!
               </p>
             </div>
             <div className="mt-6 pt-3 border-t-2 border-[#111111] text-xs font-display uppercase tracking-widest text-[#111111]">
-              PANEL 03 • SUIT UP OUTFIT
+              PANEL 03 • HERO SUITS (KIDS)
             </div>
           </ComicPanel>
 
-          {/* PANEL 4: BACKUP OUTFIT */}
-          <ComicPanel rotate={1} bg="bg-[#FFFDF5]" className="flex flex-col justify-between border-[#E62429] hover:scale-[1.02] transition-transform duration-200">
+          {/* PANEL 4: ADULTS DRESS CODE */}
+          <ComicPanel rotate={1} bg="bg-[#FFFDF5]" className="flex flex-col justify-between border-[#046A38] hover:scale-[1.02] transition-transform duration-200">
             <div>
-              <div className="w-14 h-14 bg-[#E62429] text-white border-[3px] border-[#111111] shadow-[3px_3px_0px_#111111] flex items-center justify-center mb-4 -rotate-2">
-                <Shirt className="w-8 h-8 stroke-[2.5]" />
+              <div className="w-14 h-14 bg-[#046A38] text-white border-[3px] border-[#111111] shadow-[3px_3px_0px_#111111] flex items-center justify-center mb-4 -rotate-2">
+                <Crown className="w-8 h-8 stroke-[2.5]" />
               </div>
-              <h3 className="font-display text-3xl uppercase text-[#E62429] mb-3 flex items-center gap-2">
-                <span>BACKUP OUTFIT</span>
-                <SpiderEmblem size={20} color="#E62429" />
+              <h3 className="font-display text-3xl uppercase text-[#046A38] mb-3 flex items-center gap-2">
+                <span>ADULT DRESS CODE</span>
+                <Sparkles className="w-6 h-6 text-[#FFD700] fill-[#FFD700]" />
               </h3>
-              <div className="font-body text-[#111111] font-bold text-lg bg-[#E62429]/10 border-2 border-[#111111] p-4 rounded-none -rotate-1 mb-4">
-                "Even Spider-Man needs a wardrobe change sometimes!"
+
+              <div className="font-body text-[#111111] font-bold text-lg bg-[#046A38]/10 border-2 border-[#111111] p-4 rounded-none -rotate-1 mb-4">
+                <div className="text-xs uppercase tracking-widest text-[#046A38] font-display mb-1 flex items-center gap-1">
+                  <span>✨ DRESS CODE STYLE</span>
+                </div>
+                <div className="text-2xl font-display text-[#111111] tracking-wide">
+                  COLOURFUL & CLASSY
+                </div>
               </div>
+
+              <div className="space-y-2 mb-3">
+                <span className="font-display text-xs uppercase tracking-wider text-slate-700 block font-bold">
+                  COLOUR PALETTE:
+                </span>
+                <div className="flex flex-wrap gap-2.5">
+                  <div className="inline-flex items-center gap-2 bg-[#046A38] text-white px-3.5 py-1.5 border-2 border-[#111111] shadow-[3px_3px_0px_#111111] font-display text-sm">
+                    <span className="w-3.5 h-3.5 rounded-full bg-[#10B981] border border-white inline-block shadow-sm"></span>
+                    <span>EMERALD</span>
+                  </div>
+                  <div className="inline-flex items-center gap-2 bg-[#114593] text-white px-3.5 py-1.5 border-2 border-[#111111] shadow-[3px_3px_0px_#111111] font-display text-sm">
+                    <span className="w-3.5 h-3.5 rounded-full bg-[#3B82F6] border border-white inline-block shadow-sm"></span>
+                    <span>ROYAL BLUE</span>
+                  </div>
+                </div>
+              </div>
+
               <p className="font-body text-sm text-slate-700 font-medium">
-                Spider-suits can get warm after all that web-slinging! Parents, please pack a spare
-                change of clothes for your little hero — if the costume gets too hot or anything comes
-                up, they can switch into something comfy and keep the party going.
+                Parents and adult guests: come dressed in your most vibrant, classy attire featuring Emerald Green or Royal Blue!
               </p>
             </div>
-            <div className="mt-6 pt-3 border-t-2 border-[#111111] text-xs font-display uppercase tracking-widest text-[#E62429]">
-              PANEL 04 • COSTUME CHANGE
+            <div className="mt-6 pt-3 border-t-2 border-[#111111] text-xs font-display uppercase tracking-widest text-[#046A38]">
+              PANEL 04 • ADULT DRESS CODE
+            </div>
+          </ComicPanel>
+        </div>
+
+        {/* PANEL 5: BACKUP OUTFIT FOR KIDS */}
+        <div className="mt-8">
+          <ComicPanel rotate={0} bg="bg-white" className="border-[#E62429] hover:scale-[1.01] transition-transform duration-200">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6">
+              <div className="w-14 h-14 min-w-[56px] bg-[#E62429] text-white border-[3px] border-[#111111] shadow-[3px_3px_0px_#111111] flex items-center justify-center -rotate-2">
+                <Shirt className="w-8 h-8 stroke-[2.5]" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-display text-2xl sm:text-3xl uppercase text-[#E62429] mb-1 flex items-center gap-2">
+                  <span>BACKUP OUTFIT FOR LITTLE HEROES</span>
+                  <SpiderEmblem size={20} color="#E62429" />
+                </h3>
+                <p className="font-body text-sm sm:text-base text-slate-800 font-medium leading-relaxed">
+                  Spider-suits can get warm after all that web-slinging! Parents, please pack a spare
+                  change of clothes for your little hero so they can switch into something comfy and keep the party going.
+                </p>
+              </div>
+            </div>
+            <div className="mt-4 pt-3 border-t-2 border-[#111111] text-xs font-display uppercase tracking-widest text-[#E62429] flex justify-between items-center">
+              <span>PANEL 05 • HERO COSTUME CHANGE</span>
+              <span className="font-mono text-[10px]">SPIDER HQ TIP</span>
             </div>
           </ComicPanel>
         </div>
@@ -146,4 +192,5 @@ export const EventDetails: React.FC = () => {
     </section>
   );
 };
+
 
