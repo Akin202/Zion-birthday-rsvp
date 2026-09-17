@@ -37,7 +37,6 @@ export const eventConfig = {
   faqs: [
     { q: "What is the dress code for kids?", a: "Costumes are super encouraged! Whether it's classic Spidey, Miles Morales, Spider-Gwen, or any hero suit — come ready to swing into action!" },
     { q: "What is the dress code for adults?", a: "For parents & adult guests: Colourful & Classy! The requested colours are Emerald Green and Royal Blue." },
-    { q: "Can I bring my nanny or extra caretaker?", a: "Yes — just list them in the RSVP form so we can prepare their Spider HQ pass." },
     { q: "Should parents stay or drop off?", a: "Parents are very welcome to stay in the Heroes Lounge! There will be comfortable seating and refreshments." },
     { q: "What should we bring to Spider HQ?", a: "Your hero energy — plus a spare change of clothes for your little hero! Spider-suits can get warm after all that web-slinging, so pack a comfy backup outfit they can change into if needed." },
     { q: "How do I update my RSVP?", a: "You can update it anytime using the link in your confirmation email or by messaging Saidat directly on WhatsApp." },
