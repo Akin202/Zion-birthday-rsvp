@@ -82,7 +82,6 @@ export const RsvpForm: React.FC<RsvpFormProps> = ({
   const formValues = watch();
   const isAttending = watch("isAttending");
   const hasPlusOne = watch("hasPlusOne");
-  const hasNanny = watch("hasNanny");
   const childrenList = watch("children") || [];
   const messageToCelebrant = watch("messageToCelebrant") || "";
 
@@ -129,7 +128,6 @@ export const RsvpForm: React.FC<RsvpFormProps> = ({
     const parts = ["1 adult"];
     if (hasPlusOne) parts.push("1 plus-one");
     if (childrenList.length > 0) parts.push(`${childrenList.length} ${childrenList.length === 1 ? "child" : "children"}`);
-    if (hasNanny && formValues.nannyCount > 0) parts.push(`${formValues.nannyCount} ${formValues.nannyCount === 1 ? "nanny" : "nannies"}`);
     return `${parts.join(" + ")} = ${totalHeadcount} total guest${totalHeadcount === 1 ? "" : "s"}`;
   };
 
@@ -489,58 +487,6 @@ export const RsvpForm: React.FC<RsvpFormProps> = ({
                           </m.div>
                         ))}
                       </div>
-                    )}
-                  </AnimatePresence>
-                </div>
-              </div>
-
-              {/* 7. Nanny Section */}
-              <div className="bg-white border-[3px] border-[#111111] p-6 sm:p-8 shadow-[6px_6px_0px_#111111]">
-                <div className="space-y-6">
-                  <Controller
-                    control={control}
-                    name="hasNanny"
-                    render={({ field }) => (
-                      <ToggleChoice
-                        label="Are you bringing a nanny or caretaker?"
-                        value={field.value}
-                        onChange={(val) => {
-                          field.onChange(val);
-                          setValue("nannyCount", val ? 1 : 0);
-                          trigger("hasNanny");
-                        }}
-                        options={[
-                          { label: "YES (Bringing Nanny)", value: true, color: "bg-[#00AEEF] text-white" },
-                          { label: "NO", value: false, color: "bg-slate-200 text-[#111111]" },
-                        ]}
-                      />
-                    )}
-                  />
-
-                  {/* Nanny Count Stepper */}
-                  <AnimatePresence>
-                    {hasNanny && (
-                      <m.div
-                        initial={shouldReduceMotion ? {} : { height: 0, opacity: 0 }}
-                        animate={shouldReduceMotion ? {} : { height: "auto", opacity: 1 }}
-                        exit={shouldReduceMotion ? {} : { height: 0, opacity: 0 }}
-                        transition={{ duration: 0.2, ease: "easeInOut" }}
-                        className="overflow-hidden pt-4 border-t-2 border-dashed border-[#111111]/20"
-                      >
-                        <Controller
-                          control={control}
-                          name="nannyCount"
-                          render={({ field }) => (
-                            <Stepper
-                              label="How many nannies or caretakers?"
-                              value={field.value < 1 ? 1 : field.value}
-                              min={1}
-                              max={5}
-                              onChange={(val) => field.onChange(val)}
-                            />
-                          )}
-                        />
-                      </m.div>
                     )}
                   </AnimatePresence>
                 </div>
